@@ -1,0 +1,78 @@
+{
+    "Application": {
+        "PMI_Framework_Admin": {
+            "name": "Admin",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin"
+        },
+        "pmi_framework_kpidashboard": {
+            "name": "KPIDashboard",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard"
+        },
+        "PMI_Framework_AiAssistant": {
+            "name": "AiAssistant",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant"
+        },
+        "PMI_Framework_WidgetTemplateEditor": {
+            "name": "WidgetTemplateEditor",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor"
+        }
+    },
+    "Library": {
+        "PMI_Library_AIChatbotUI": {
+            "name": "AIChatbotUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AIChatbotUI",
+            "libPath":"node_modules/@pmi/ai-chatbot"
+        },
+        "PMI_Library_ApolloUI": {
+            "name": "ApolloUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ApolloUI",
+            "libPath":"node_modules/@pmi/pmi.apollo.ui"
+
+        },
+        "PMI_Library_AuthUI": {
+            "name": "AuthUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AuthUI",
+            "libPath":"node_modules/@pmi/auth"
+        },
+        "PMI_Library_BusinessQuestionsUI": {
+            "name": "BusinessQuestionsUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_BusinessQuestionsUI",
+            "libPath":"node_modules/@pmi/business-questions"
+
+        },
+        "PMI_Library_ConstantsUI": {
+            "name": "ConstantsUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ConstantsUI",
+            "libPath":"node_modules/@pmi/constants"
+        },
+        "PMI_Library_FiltersUI": {
+            "name": "FiltersUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FiltersUI",
+            "libPath":"node_modules/@pmi/filters"
+        },
+        "PMI_Library_FrameworkKPIUI": {
+            "name": "FrameworkKPIUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FrameworkKPIUI",
+            "libPath":"node_modules/@pmi/kpi-ui"
+
+        },
+        "PMI_Library_PayloadDashboardUI": {
+            "name": "PayloadDashboardUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_PayloadDashboardUI",
+            "libPath":"node_modules/@pmi/payload-dashboard"
+
+        },
+        "PMI_Library_WidgetsUI": {
+            "name": "WidgetsUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsUI",
+            "libPath":"node_modules/@pmi/widgets"
+
+        },
+        "PMI_Library_WidgetsSharedUI": {
+            "name": "WidgetsSharedUI",
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsSharedUI",
+            "libPath":"node_modules/@pmi/widgets-shared"
+
+        }
+    }
+}

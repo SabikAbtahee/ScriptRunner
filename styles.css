@@ -1,0 +1,243 @@
+body{
+    background-color: #454545;
+}
+.output_window {
+    height: 200px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+.material-button {
+    font-family: cursive;
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: #4c54af
+}
+
+.material-button:hover:not(.disabled) {
+    color: #ffffff;
+    background-color: #83e787;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.material-button:active:not(.disabled) {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(2px);
+}
+
+.material-button.disabled {
+    color: rgba(0, 0, 0, 0.38);
+    background-color: rgba(0, 0, 0, 0.12);
+    cursor: not-allowed;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.run {
+    background-color: #4CAF50 !important;
+}
+
+.stop {
+    background-color: #8f2828 !important;
+
+}
+
+.processing {
+    background-color: #f3d31d !important;
+
+}
+
+.error {
+    background-color: #ff0000 !important;
+
+}
+
+.row-container {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+}
+
+.button-div {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+    width: 20%;
+    min-width: 196px;
+
+}
+
+.row select,
+.row button {
+    margin-right: 10px;
+}
+
+.button-container {
+    display: flex;
+    margin-right: 10px;
+    justify-content: flex-end;
+}
+
+
+.row-container select {
+    margin-right: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.row-container select {
+    font-family: cursive;
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #f9f9f9;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+}
+
+
+.row-container select[multiple] {
+    display: none;
+}
+
+.custom-select {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.select-selected {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.select-items {
+    position: absolute;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    z-index: 99;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.select-items div {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.select-items div:hover {
+    background-color: #ddd;
+}
+
+.select-items input {
+    margin-right: 10px;
+}
+
+.select-hide {
+    display: none;
+}
+
+
+.left-drop-div,.right-drop-div{
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+pre{
+    
+    max-height: 150px;
+    overflow: auto;
+    margin: 12px;
+    background-color: black;
+    color:white ;
+
+}
+
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.button-progress{
+    color:green;
+    background-color: white;
+    white-space: normal;
+    text-align: center;
+    word-break: break-word;
+    margin-top: 20px !important;
+    margin-right: 10px !important;
+    margin: 0;
+    padding: 8px;
+}
+
+.drop-div-progress{
+    flex-grow: 1;
+}
+
+.drop-div{
+    display: flex;
+}
+
+.arrow-div{
+    display: flex;
+    margin-right: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-button-div{
+    display: flex;
+}
+
+.pre-progress{
+    white-space: normal;
+    padding: 12px;
+    word-break: break-all;
+}
+
+.progress-text{
+    white-space: normal;
+    text-align: center;
+    word-break: break-word;
+}
