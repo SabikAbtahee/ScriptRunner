@@ -140,10 +140,10 @@ function copyToDestination(event, param)
 
     let destinationDirectory = JSON.parse(param.destination).path;
 
-    let arg1 = "./dist/**/*";
+    let arg1 = `${sourceDirectory}/dist/**/*`;
     let arg2 = `${destinationDirectory}/${sourceLibDirectory}`
 
-    let command = spawn('cpx', [arg1, arg2], { cwd: sourceDirectory, shell: true, });
+    let command = spawn('cpx', [arg1, arg2]);
 
     command.stdout.on('data', (data) =>
     {
@@ -155,7 +155,7 @@ function copyToDestination(event, param)
     });
     command.on('close', (data) =>
     {
-        event.sender.send('copy_output', `cpx ${arg1} ${arg2}`, param.progress, false);
+        event.sender.send('copy_output', `cpx "${arg1}" "${arg2}"`, param.progress, false);
         event.sender.send('copy_output', `${data.toString()}`, param.progress, true);
     });
 
