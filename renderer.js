@@ -27,7 +27,10 @@ async function addApplicationRowHandler()
     Object.keys(config.Application).forEach(key =>
     {
         const option = document.createElement('option');
-        option.value = JSON.stringify({ path: config.Application[key].path });
+        option.value = JSON.stringify({ 
+            path: config.Application[key].path,
+            runCommand: config.Application[key].runCommand
+        });
         option.textContent = config.Application[key].name;
         appDropdown.appendChild(option);
     });
@@ -247,6 +250,15 @@ function runApp(appDropdown, progress, rowCounter)
         return;
     }
     console.log('Running app:', appPath);
+    
+    // Reset terminal background to black when starting
+    const progressElement = document.getElementById(progress.id);
+    if (progressElement) {
+        progressElement.style.backgroundColor = 'black';
+        progressElement.style.color = 'white';
+        progressElement.innerText = ''; // Clear previous output
+    }
+    
     window.API.run_app({ path: appPath, progress: progress.id, rowCounter: rowCounter });
 }
 
@@ -257,6 +269,15 @@ function restartApp(appDropdown, progress, rowCounter)
         return;
     }
     console.log('Restarting app:', appPath);
+    
+    // Reset terminal background to black when restarting
+    const progressElement = document.getElementById(progress.id);
+    if (progressElement) {
+        progressElement.style.backgroundColor = 'black';
+        progressElement.style.color = 'white';
+        progressElement.innerText = ''; // Clear previous output
+    }
+    
     window.API.restart_app({ path: appPath, progress: progress.id, rowCounter: rowCounter });
 }
 
@@ -266,7 +287,10 @@ function populateRightDropdown(dropdown, keys)
     apps.forEach(key =>
     {
         const option = document.createElement('option');
-        option.value = JSON.stringify({ path: keys.Application[key].path });
+        option.value = JSON.stringify({ 
+            path: keys.Application[key].path,
+            runCommand: keys.Application[key].runCommand
+        });
         option.textContent = keys.Application[key].name;
         dropdown.appendChild(option);
     });
@@ -346,6 +370,15 @@ window.API.app_output((data, progress, rowCounter, pid) =>
     element.style.display = 'block';
     element.innerText += data + "\n";
     element.scrollTop = element.scrollHeight;
+
+    // Check for successful compilation and change background color
+    if (data.includes('✔ Compiled successfully.')) {
+        element.style.backgroundColor = '#0d4f2b'; // Dark green background for success
+        element.style.color = '#4ade80'; // Light green text
+    } else if (data.includes('ERROR') || data.includes('error') || data.includes('Error')) {
+        element.style.backgroundColor = '#4c1d1d'; // Dark red background for errors
+        element.style.color = '#f87171'; // Light red text
+    }
 
     // Store the PID for the close button to use
     const closeButton = document.getElementById('app-close-button-progress-' + `${rowCounter}`);

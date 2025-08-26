@@ -2,19 +2,25 @@
     "Application": {
         "PMI_Framework_Admin": {
             "name": "Admin",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin"
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin",
+            "runCommand":"ng serve --port=4201"
         },
         "pmi_framework_kpidashboard": {
             "name": "KPIDashboard",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard"
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard",
+            "runCommand":"ng serve --port=4200"
         },
         "PMI_Framework_AiAssistant": {
             "name": "AiAssistant",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant"
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant",
+            "runCommand":"ng serve --port=4203"
+
         },
         "PMI_Framework_WidgetTemplateEditor": {
             "name": "WidgetTemplateEditor",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor"
+            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor",
+            "runCommand":"ng serve --port=4200"
+
         }
     },
     "Library": {

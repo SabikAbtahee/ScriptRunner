@@ -136,8 +136,11 @@ ipcMain.handle('copy', async (event, param) =>
 
 ipcMain.handle('run_app', async (event, param) =>
 {
-    let directory = JSON.parse(param.path).path;
+    let appConfig = JSON.parse(param.path);
+    let directory = appConfig.path;
+    let runCommand = appConfig.runCommand || 'npm run start'; // fallback to npm run start
     console.log('Starting app in directory:', directory);
+    console.log('Using run command:', runCommand);
     
     // Kill existing process if running
     if (runningApps.has(directory)) {
@@ -147,7 +150,12 @@ ipcMain.handle('run_app', async (event, param) =>
         runningApps.delete(directory);
     }
     
-    let command = spawn('npm', ['run', 'start'], { cwd: directory, shell: true });
+    // Parse the command and arguments
+    let commandParts = runCommand.split(' ');
+    let baseCommand = commandParts[0];
+    let args = commandParts.slice(1);
+    
+    let command = spawn(baseCommand, args, { cwd: directory, shell: true });
     
     // Track this process
     runningApps.set(directory, command.pid);
@@ -176,8 +184,11 @@ ipcMain.handle('run_app', async (event, param) =>
 
 ipcMain.handle('restart_app', async (event, param) =>
 {
-    let directory = JSON.parse(param.path).path;
+    let appConfig = JSON.parse(param.path);
+    let directory = appConfig.path;
+    let runCommand = appConfig.runCommand || 'npm run start'; // fallback to npm run start
     console.log('Restarting app in directory:', directory);
+    console.log('Using run command:', runCommand);
     
     // Kill existing process first
     if (runningApps.has(directory)) {
@@ -197,7 +208,12 @@ ipcMain.handle('restart_app', async (event, param) =>
     }
     
     function startNewProcess() {
-        let command = spawn('npm', ['run', 'start'], { cwd: directory, shell: true });
+        // Parse the command and arguments
+        let commandParts = runCommand.split(' ');
+        let baseCommand = commandParts[0];
+        let args = commandParts.slice(1);
+        
+        let command = spawn(baseCommand, args, { cwd: directory, shell: true });
         
         // Track this process
         runningApps.set(directory, command.pid);
