@@ -4,7 +4,8 @@ const { spawn } = require('node:child_process');
 const kill = require('tree-kill');
 const fs = require('fs');
 
-
+// Track running app processes
+const runningApps = new Map();
 
 function createWindow()
 {
@@ -131,6 +132,97 @@ ipcMain.handle('copy', async (event, param) =>
 {
     copyToDestination(event, param);
 
+});
+
+ipcMain.handle('run_app', async (event, param) =>
+{
+    let directory = JSON.parse(param.path).path;
+    console.log('Starting app in directory:', directory);
+    
+    // Kill existing process if running
+    if (runningApps.has(directory)) {
+        const existingPid = runningApps.get(directory);
+        console.log('Killing existing process:', existingPid);
+        kill(existingPid, 'SIGTERM');
+        runningApps.delete(directory);
+    }
+    
+    let command = spawn('npm', ['run', 'start'], { cwd: directory, shell: true });
+    
+    // Track this process
+    runningApps.set(directory, command.pid);
+    
+    command.stdout.on('data', (data) =>
+    {
+        event.sender.send('app_output', `${data.toString()}`, param.progress, param.rowCounter, command.pid);
+    });
+    
+    command.stderr.on('data', (data) =>
+    {
+        event.sender.send('app_output', `${data.toString()}`, param.progress, param.rowCounter, command.pid);
+    });
+    
+    command.on('close', (code) =>
+    {
+        console.log('App process exited with code:', code);
+        runningApps.delete(directory);
+    });
+    
+    command.on('exit', (code) =>
+    {
+        runningApps.delete(directory);
+    });
+});
+
+ipcMain.handle('restart_app', async (event, param) =>
+{
+    let directory = JSON.parse(param.path).path;
+    console.log('Restarting app in directory:', directory);
+    
+    // Kill existing process first
+    if (runningApps.has(directory)) {
+        const existingPid = runningApps.get(directory);
+        console.log('Killing existing process for restart:', existingPid);
+        kill(existingPid, 'SIGTERM', (err) => {
+            if (err) {
+                console.error('Error killing existing process:', err);
+            }
+            runningApps.delete(directory);
+            // Start new process after killing old one
+            startNewProcess();
+        });
+    } else {
+        // No existing process, start immediately
+        startNewProcess();
+    }
+    
+    function startNewProcess() {
+        let command = spawn('npm', ['run', 'start'], { cwd: directory, shell: true });
+        
+        // Track this process
+        runningApps.set(directory, command.pid);
+        
+        command.stdout.on('data', (data) =>
+        {
+            event.sender.send('app_output', `${data.toString()}`, param.progress, param.rowCounter, command.pid);
+        });
+        
+        command.stderr.on('data', (data) =>
+        {
+            event.sender.send('app_output', `${data.toString()}`, param.progress, param.rowCounter, command.pid);
+        });
+        
+        command.on('close', (code) =>
+        {
+            console.log('Restart app process exited with code:', code);
+            runningApps.delete(directory);
+        });
+        
+        command.on('exit', (code) =>
+        {
+            runningApps.delete(directory);
+        });
+    }
 });
 
 function copyToDestination(event, param)

@@ -9,5 +9,7 @@ contextBridge.exposeInMainWorld('API', {
     watch: (param) => ipcRenderer.invoke('watch', param),
     kill: (param) => ipcRenderer.invoke('kill', param),
     watch_output: (callback) => ipcRenderer.on('watch_output', (event, data, progress,rowCounter,pid) => callback(data,progress,rowCounter,pid)),
-
+    run_app: (param) => ipcRenderer.invoke('run_app', param),
+    restart_app: (param) => ipcRenderer.invoke('restart_app', param),
+    app_output: (callback) => ipcRenderer.on('app_output', (event, data, progress, rowCounter, pid) => callback(data, progress, rowCounter, pid)),
 })

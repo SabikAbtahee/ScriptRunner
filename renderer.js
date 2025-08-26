@@ -1,3 +1,90 @@
+// Add the button to the DOM (example: append to body or a specific container)
+
+const addAppBtn = document.createElement('button');
+addAppBtn.id = 'addApplicationRowButton';
+addAppBtn.className = 'material-button green close-button-div';
+addAppBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+`;
+document.querySelector('.button-container').appendChild(addAppBtn);
+
+// Add event listener to the button
+addAppBtn.addEventListener('click', addApplicationRowHandler);
+
+// Handler function for the button
+async function addApplicationRowHandler()
+{
+    // Get config and create a dropdown listing all applications using async/await
+    const config = await window.API.get_config();
+    const rowsContainer = document.getElementById('rowsContainer');
+    const row = document.createElement('div');
+    row.className = 'row row-container';
+
+    const appDropdownDiv = document.createElement('div');
+    appDropdownDiv.className = 'left-drop-div';
+    const appDropdown = document.createElement('select');
+    appDropdown.innerHTML = '<option value="" disabled selected>Select an application</option>';
+    Object.keys(config.Application).forEach(key =>
+    {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ path: config.Application[key].path });
+        option.textContent = config.Application[key].name;
+        appDropdown.appendChild(option);
+    });
+    appDropdownDiv.appendChild(appDropdown);
+
+    // Create a container for dropdown and progress
+    const dropdownWithProgressDiv = document.createElement('div');
+    dropdownWithProgressDiv.className = 'drop-div-progress';
+
+    const appProgress = document.createElement('pre');
+    appProgress.id = 'app-progress-' + `${rowCounter}`;
+    appProgress.className = 'pre-progress';
+    appProgress.style.display = 'none';
+    
+    dropdownWithProgressDiv.appendChild(appDropdownDiv);
+    dropdownWithProgressDiv.appendChild(appProgress);
+    row.appendChild(dropdownWithProgressDiv);
+
+    // Add Run button
+    const runButton = document.createElement('button');
+    runButton.className = 'material-button';
+    runButton.textContent = 'Run';
+
+    // Add Restart button
+    const restartButton = document.createElement('button');
+    restartButton.className = 'material-button';
+    restartButton.textContent = 'Restart';
+
+    rowCounter++;
+    row.id = 'app-row-' + `${rowCounter}`;
+
+    // Add onclick handlers with progress parameters
+    runButton.onclick = () => runApp(appDropdown, appProgress, rowCounter);
+    restartButton.onclick = () => restartApp(appDropdown, appProgress, rowCounter);
+
+    row.appendChild(runButton);
+    row.appendChild(restartButton);
+
+    // Add close button
+    const closeButtonDiv = document.createElement('div');
+    closeButtonDiv.id = 'app-close-button-div-' + `${rowCounter}`;
+    closeButtonDiv.className = 'close-button-div';
+    const closeButton = document.createElement('button');
+    closeButton.id = 'app-close-button-progress-' + `${rowCounter}`;
+    closeButton.className = 'material-button error close-button-div';
+    closeButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="m336-280 144-144 144 144 56-56-144-144 144-144-56-56-144 144-144-144-56 56 144 144-144 144 56 56ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>';
+    
+    // Initial close handler (will be updated when process starts)
+    closeButton.onclick = () => {
+        rowsContainer.removeChild(row);
+    };
+
+    closeButtonDiv.appendChild(closeButton);
+    row.appendChild(closeButtonDiv);
+
+    rowsContainer.appendChild(row);
+}
 
 let rowCounter = 0;
 
@@ -57,7 +144,7 @@ async function createBuildRow()
     const button = document.createElement('button');
     button.id = 'button-progress-' + `${rowCounter}`;
     button.className = 'material-button';
-    button.textContent = 'Build and Copy';
+    button.textContent = 'Build & Copy';
 
     const copy = document.createElement('button');
     copy.id = 'copy-progress-' + `${rowCounter}`;
@@ -153,6 +240,25 @@ function populateLeftDropdown(dropdown, keys)
     });
 }
 
+function runApp(appDropdown, progress, rowCounter)
+{
+    const appPath = appDropdown.value;
+    if (!appPath) {
+        return;
+    }
+    console.log('Running app:', appPath);
+    window.API.run_app({ path: appPath, progress: progress.id, rowCounter: rowCounter });
+}
+
+function restartApp(appDropdown, progress, rowCounter)
+{
+    const appPath = appDropdown.value;
+    if (!appPath) {
+        return;
+    }
+    console.log('Restarting app:', appPath);
+    window.API.restart_app({ path: appPath, progress: progress.id, rowCounter: rowCounter });
+}
 
 function populateRightDropdown(dropdown, keys)
 {
@@ -231,6 +337,32 @@ window.API.copy_output((data, progress, isDone) =>
         button.classList.remove('disabled');
         const x = document.getElementById(`copy-${progress}`)
         x.classList.remove('disabled');
+    }
+})
+
+window.API.app_output((data, progress, rowCounter, pid) =>
+{
+    const element = document.getElementById(`${progress}`)
+    element.style.display = 'block';
+    element.innerText += data + "\n";
+    element.scrollTop = element.scrollHeight;
+
+    // Store the PID for the close button to use
+    const closeButton = document.getElementById('app-close-button-progress-' + `${rowCounter}`);
+    if (closeButton) {
+        closeButton.setAttribute('data-pid', pid);
+        closeButton.onclick = () =>
+        {
+            const storedPid = closeButton.getAttribute('data-pid');
+            if (storedPid) {
+                window.API.kill({ command: parseInt(storedPid) });
+            }
+            const rowsContainer = document.getElementById('rowsContainer');
+            const row = document.getElementById('app-row-' + `${rowCounter}`);
+            if (row) {
+                rowsContainer.removeChild(row);
+            }
+        }
     }
 })
 
