@@ -20,6 +20,7 @@
   box-shadow: var(--shadow-sm);
   background-color: var(--primary-color);
   min-height: 44px; /* Better touch target */
+  -webkit-app-region: no-drag; /* Ensure buttons remain clickable in draggable areas */
 }
 
 .btn:hover:not(.btn--disabled) {

@@ -4,7 +4,18 @@
  */
 export class ProcessManager {
   constructor() {
+    this.appRows = new Map(); // Track app row instances
     this.setupEventListeners();
+  }
+
+  // Register an app row instance
+  registerAppRow(rowCounter, appRowInstance) {
+    this.appRows.set(rowCounter, appRowInstance);
+  }
+
+  // Unregister an app row instance
+  unregisterAppRow(rowCounter) {
+    this.appRows.delete(rowCounter);
   }
 
   setupEventListeners() {
@@ -118,6 +129,11 @@ export class ProcessManager {
         const now = new Date();
         element.innerText = `Build Done: ${now.toLocaleTimeString()}\n`;
       }
+      
+      // Re-enable build button - extract row ID from progress ID
+      const rowId = progress.replace('progress-', '');
+      const buildButton = document.getElementById(`build-button-${rowId}`);
+      if (buildButton) buildButton.classList.remove('btn--disabled');
     }
   }
 
@@ -137,9 +153,10 @@ export class ProcessManager {
         element.innerText += `Copied: ${now.toLocaleTimeString()}\n`;
       }
       
-      // Re-enable buttons
-      const buildButton = document.getElementById(`button-${progress}`);
-      const copyButton = document.getElementById(`copy-${progress}`);
+      // Re-enable buttons - extract row ID from progress ID
+      const rowId = progress.replace('progress-', '');
+      const buildButton = document.getElementById(`build-button-${rowId}`);
+      const copyButton = document.getElementById(`copy-button-${rowId}`);
       if (buildButton) buildButton.classList.remove('btn--disabled');
       if (copyButton) copyButton.classList.remove('btn--disabled');
     }
@@ -167,9 +184,15 @@ export class ProcessManager {
       element.innerText += data + '\n';
       element.scrollTop = element.scrollHeight;
 
-      // Update terminal styling based on output
-      if (data.includes('✔ Compiled successfully.')) {
+      // Update terminal styling and status based on output
+      if (this.isCompilationSuccessful(data)) {
         element.className = 'terminal terminal--success';
+        
+        // Update app row status to compiled
+        const appRowInstance = this.appRows.get(rowCounter);
+        if (appRowInstance) {
+          appRowInstance.setCompiledStatus();
+        }
       } else if (data.includes('ERROR') || data.includes('error') || data.includes('Error')) {
         element.className = 'terminal terminal--error';
       }
@@ -180,5 +203,21 @@ export class ProcessManager {
     if (closeButton) {
       closeButton.dataset.pid = pid;
     }
+  }
+
+  // Check if the output indicates successful compilation
+  isCompilationSuccessful(data) {
+    const successPatterns = [
+      '✔ Compiled successfully.',
+      'Compiled successfully',
+      'webpack compiled successfully',
+      'Build completed successfully',
+      'Compilation complete',
+      '✓ Compiled'
+    ];
+    
+    return successPatterns.some(pattern => 
+      data.toLowerCase().includes(pattern.toLowerCase())
+    );
   }
 }

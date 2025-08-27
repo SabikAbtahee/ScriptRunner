@@ -95,6 +95,11 @@
   color: var(--warning-color);
 }
 
+.status--compiled {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--success-color);
+}
+
 .status__dot {
   width: 6px;
   height: 6px;

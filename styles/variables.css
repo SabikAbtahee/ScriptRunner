@@ -21,6 +21,8 @@
   --surface-color: #f9f9f9;
   --text-primary: #ffffff;
   --text-secondary: #000000;
+  --text-muted: #a0a0a0;
+  --text-accent: #64b5f6;
   --border-color: #ccc;
   --disabled-color: rgba(0, 0, 0, 0.12);
   --disabled-text: rgba(0, 0, 0, 0.38);

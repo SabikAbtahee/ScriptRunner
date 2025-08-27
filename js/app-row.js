@@ -18,6 +18,10 @@ export class AppRow {
       const config = await ConfigManager.getConfig();
       this.element = this.createRowElement(config);
       this.container.appendChild(this.element);
+      
+      // Register this instance with the process manager
+      this.processManager.registerAppRow(this.rowId, this);
+      
       return this.element;
     } catch (error) {
       console.error('Failed to create app row:', error);
@@ -145,6 +149,10 @@ export class AppRow {
       return;
     }
 
+    // Disable run button
+    const runButton = document.getElementById(`run-button-${this.rowId}`);
+    runButton.classList.add('btn--disabled');
+
     // Update status
     this.updateStatus('running', 'Running');
     
@@ -165,6 +173,10 @@ export class AppRow {
       alert('Please select an application');
       return;
     }
+
+    // Disable restart button
+    const restartButton = document.getElementById(`restart-button-${this.rowId}`);
+    restartButton.classList.add('btn--disabled');
 
     // Update status
     this.updateStatus('building', 'Restarting');
@@ -213,7 +225,22 @@ export class AppRow {
     }
   }
 
+  setCompiledStatus() {
+    // Update status to compiled
+    this.updateStatus('compiled', 'Compiled');
+    
+    // Re-enable buttons
+    const runButton = document.getElementById(`run-button-${this.rowId}`);
+    const restartButton = document.getElementById(`restart-button-${this.rowId}`);
+    
+    if (runButton) runButton.classList.remove('btn--disabled');
+    if (restartButton) restartButton.classList.remove('btn--disabled');
+  }
+
   remove() {
+    // Unregister from process manager
+    this.processManager.unregisterAppRow(this.rowId);
+    
     if (this.element) {
       DOMUtils.removeElement(this.element);
     }
