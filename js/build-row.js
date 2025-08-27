@@ -41,7 +41,7 @@ export class BuildRow {
 
     // Create terminal
     const terminal = DOMUtils.createElement('pre', {
-      id: `build-${this.rowId}`,
+      id: `build-progress-${this.rowId}`,
       className: 'terminal u-hidden'
     });
     content.appendChild(terminal);
