@@ -11,6 +11,12 @@
   --error-light: #f87171;
   --warning-color: #f3d31d;
   --processing-color: #1df34b;
+  --info-color: #2196f3;
+  --info-dark: #1565c0;
+  --info-light: #64b5f6;
+  --accent-color: #ff6b35;
+  --accent-dark: #cc5529;
+  --accent-light: #ff9472;
   --background-color: #454545;
   --surface-color: #f9f9f9;
   --text-primary: #ffffff;

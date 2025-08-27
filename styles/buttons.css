@@ -53,10 +53,45 @@
 
 .btn--warning {
   background-color: var(--warning-color);
+  color: var(--text-secondary); /* Dark text for better contrast on yellow */
 }
 
 .btn--processing {
   background-color: var(--processing-color);
+}
+
+.btn--info {
+  background-color: var(--info-color);
+}
+
+.btn--accent {
+  background-color: var(--accent-color);
+}
+
+/* Button variant hover states */
+.btn--success:hover:not(.btn--disabled) {
+  background-color: var(--success-light);
+}
+
+.btn--error:hover:not(.btn--disabled) {
+  background-color: var(--error-light);
+}
+
+.btn--warning:hover:not(.btn--disabled) {
+  background-color: #fdd835; /* Lighter yellow */
+  color: var(--text-secondary); /* Keep dark text on hover */
+}
+
+.btn--processing:hover:not(.btn--disabled) {
+  background-color: #4ade80; /* Lighter green */
+}
+
+.btn--info:hover:not(.btn--disabled) {
+  background-color: var(--info-light);
+}
+
+.btn--accent:hover:not(.btn--disabled) {
+  background-color: var(--accent-light);
 }
 
 .btn--disabled {
