@@ -1,4 +1,23 @@
 /* Utility classes */
+
+/* Typography utilities */
+.u-font-heading {
+  font-family: var(--font-family-heading) !important;
+}
+
+.u-font-mono {
+  font-family: var(--font-family-mono) !important;
+}
+
+.u-font-primary {
+  font-family: var(--font-family-primary) !important;
+}
+
+.u-weight-normal { font-weight: var(--font-weight-normal) !important; }
+.u-weight-medium { font-weight: var(--font-weight-medium) !important; }
+.u-weight-semibold { font-weight: var(--font-weight-semibold) !important; }
+.u-weight-bold { font-weight: var(--font-weight-bold) !important; }
+
 .u-visually-hidden {
   position: absolute !important;
   width: 1px !important;

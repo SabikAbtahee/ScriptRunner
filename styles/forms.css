@@ -1,6 +1,6 @@
 /* Form components */
 .form-select {
-  font-family: var(--font-family);
+  font-family: var(--font-family-primary);
   width: 100%;
   padding: var(--spacing-md);
   border-radius: var(--border-radius);

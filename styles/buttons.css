@@ -1,6 +1,6 @@
 /* Button component styles */
 .btn {
-  font-family: var(--font-family);
+  font-family: var(--font-family-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;

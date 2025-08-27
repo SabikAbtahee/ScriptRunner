@@ -7,9 +7,11 @@ body {
   margin: 0;
   padding: var(--spacing-lg);
   background-color: var(--background-color);
-  font-family: var(--font-family);
+  font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
   color: var(--text-primary);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
 }
 
 /* Custom scrollbar */
