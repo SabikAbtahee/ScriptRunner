@@ -69,6 +69,29 @@
   opacity: 1;
 }
 
+/* App row individual time display */
+.app-time {
+  font-family: var(--font-family-primary);
+  font-size: 11px;
+  margin-top: var(--spacing-xs);
+  padding: 4px 8px;
+  background-color: var(--surface-color);
+  border-radius: 4px;
+  border-left: 3px solid var(--accent-color);
+  opacity: 0.9;
+}
+
+.app-time__label {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-time__value {
+  color: var(--accent-color);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-mono);
+}
+
 .header__actions {
   display: flex;
   gap: var(--spacing-sm);

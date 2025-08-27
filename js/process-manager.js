@@ -267,6 +267,12 @@ export class ProcessManager {
       } else if (data.includes('ERROR') || data.includes('error') || data.includes('Error')) {
         element.className = 'terminal terminal--error';
         
+        // Update app row to stop individual timer on error
+        const appRowInstance = this.appRows.get(rowCounter);
+        if (appRowInstance) {
+          appRowInstance.stopIndividualTimer();
+        }
+        
         // Stop timer on error as well
         this.stopTimerForOperation(progress);
       }

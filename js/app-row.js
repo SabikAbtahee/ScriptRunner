@@ -13,6 +13,11 @@ export class AppRow {
     this.rowId = rowId;
     this.element = null;
     this.onRemove = onRemove;
+    
+    // Individual timer properties
+    this.currentOperationStart = null;
+    this.currentOperationTime = 0;
+    this.timerInterval = null;
   }
 
   async create() {
@@ -135,12 +140,20 @@ export class AppRow {
       id: `app-status-${this.rowId}`
     });
 
+    // Individual time display for this app
+    const timeDiv = DOMUtils.createElement('div', {
+      className: 'app-time u-hidden',
+      id: `app-time-${this.rowId}`,
+      innerHTML: '<span class="app-time__label">Time Spent:</span> <span class="app-time__value">0s</span>'
+    });
+
     actions.appendChild(runButton);
     actions.appendChild(restartButton);
     
     controls.appendChild(actions);
     controls.appendChild(closeButton);
     controls.appendChild(statusDiv);
+    controls.appendChild(timeDiv);
 
     return controls;
   }
@@ -160,6 +173,9 @@ export class AppRow {
 
     // Update status
     this.updateStatus('running', 'Running');
+    
+    // Start individual timer for this operation
+    this.startIndividualTimer();
     
     // Update close button to handle process killing
     this.setupProcessKillHandler();
@@ -192,6 +208,9 @@ export class AppRow {
     // Update status
     this.updateStatus('building', 'Restarting');
     
+    // Start individual timer for this operation (reset from previous)
+    this.startIndividualTimer();
+    
     // Update close button to handle process killing
     this.setupProcessKillHandler();
 
@@ -215,6 +234,9 @@ export class AppRow {
       this.processManager.killProcess(pid);
     }
     
+    // Stop individual timer when closing
+    this.stopIndividualTimer();
+    
     this.remove();
   }
 
@@ -225,6 +247,10 @@ export class AppRow {
       if (pid) {
         this.processManager.killProcess(pid);
       }
+      
+      // Stop individual timer when killing process
+      this.stopIndividualTimer();
+      
       this.remove();
     };
   }
@@ -245,10 +271,114 @@ export class AppRow {
     // Update status to compiled
     this.updateStatus('compiled', 'Compiled');
     
+    // Stop individual timer
+    this.stopIndividualTimer();
+    
     // Only re-enable restart button, keep run button disabled
     const restartButton = document.getElementById(`restart-button-${this.rowId}`);
     
     if (restartButton) restartButton.classList.remove('btn--disabled');
+  }
+
+  /**
+   * Start individual timer for this app row
+   */
+  startIndividualTimer() {
+    this.currentOperationStart = Date.now();
+    this.currentOperationTime = 0;
+    
+    // Show time display
+    const timeDiv = document.getElementById(`app-time-${this.rowId}`);
+    if (timeDiv) {
+      timeDiv.classList.remove('u-hidden');
+    }
+    
+    // Update timer every second
+    this.timerInterval = setInterval(() => {
+      this.updateIndividualTimeDisplay();
+    }, 1000);
+    
+    // Initial display update
+    this.updateIndividualTimeDisplay();
+  }
+
+  /**
+   * Stop individual timer for this app row
+   */
+  stopIndividualTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    
+    // Calculate final time
+    if (this.currentOperationStart) {
+      this.currentOperationTime = Math.round((Date.now() - this.currentOperationStart) / 1000);
+      this.currentOperationStart = null;
+    }
+    
+    // Final display update
+    this.updateIndividualTimeDisplay();
+  }
+
+  /**
+   * Reset individual timer (for new operations)
+   */
+  resetIndividualTimer() {
+    this.stopIndividualTimer();
+    this.currentOperationTime = 0;
+    
+    // Hide time display
+    const timeDiv = document.getElementById(`app-time-${this.rowId}`);
+    if (timeDiv) {
+      timeDiv.classList.add('u-hidden');
+    }
+  }
+
+  /**
+   * Update the individual time display
+   */
+  updateIndividualTimeDisplay() {
+    const timeValueSpan = document.querySelector(`#app-time-${this.rowId} .app-time__value`);
+    if (timeValueSpan) {
+      let currentTime = this.currentOperationTime;
+      
+      // If timer is running, calculate current elapsed time
+      if (this.currentOperationStart) {
+        currentTime = Math.round((Date.now() - this.currentOperationStart) / 1000);
+      }
+      
+      timeValueSpan.textContent = this.formatTime(currentTime);
+    }
+  }
+
+  /**
+   * Format time in seconds to human readable format
+   */
+  formatTime(seconds) {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      if (remainingSeconds === 0) {
+        return `${minutes}m`;
+      }
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      
+      let result = `${hours}h`;
+      if (minutes > 0) {
+        result += ` ${minutes}m`;
+      }
+      if (remainingSeconds > 0) {
+        result += ` ${remainingSeconds}s`;
+      }
+      return result;
+    }
   }
 
   async refreshSelector() {
@@ -286,6 +416,9 @@ export class AppRow {
   }
 
   remove() {
+    // Stop individual timer cleanup
+    this.stopIndividualTimer();
+    
     // Unregister from process manager
     this.processManager.unregisterAppRow(this.rowId);
     
