@@ -50,7 +50,6 @@ class ScriptRunnerApp {
     // Load config button
     const loadConfigButton = document.getElementById('loadConfigButton');
     const configFileInput = document.getElementById('configFileInput');
-    const resetConfigButton = document.getElementById('resetConfigButton');
     
     if (loadConfigButton && configFileInput) {
       DOMUtils.addSafeEventListener(loadConfigButton, 'click', () => {
@@ -62,12 +61,6 @@ class ScriptRunnerApp {
         if (file) {
           await this.handleConfigFileLoad(file);
         }
-      });
-    }
-
-    if (resetConfigButton) {
-      DOMUtils.addSafeEventListener(resetConfigButton, 'click', () => {
-        this.handleConfigReset();
       });
     }
 
@@ -194,12 +187,6 @@ class ScriptRunnerApp {
       const config = await ConfigManager.loadConfigFromFile(file);
       console.log('Config loaded successfully:', config);
       
-      // Show reset button since we now have a custom config
-      const resetButton = document.getElementById('resetConfigButton');
-      if (resetButton) {
-        resetButton.style.display = 'inline-flex';
-      }
-      
       // Success message
       this.showMessage(`Configuration loaded and saved: ${file.name}`, 'success');
       
@@ -265,35 +252,8 @@ class ScriptRunnerApp {
   checkSavedConfig() {
     const storageInfo = ConfigManager.getStorageInfo();
     if (storageInfo && storageInfo.hasConfig) {
-      // Show the reset button
-      const resetButton = document.getElementById('resetConfigButton');
-      if (resetButton) {
-        resetButton.style.display = 'inline-flex';
-      }
-      
       // Show info message about loaded config
       this.showMessage(`Using saved config (loaded: ${storageInfo.lastLoaded})`, 'info');
-    }
-  }
-
-  async handleConfigReset() {
-    try {
-      // Reset to default config
-      ConfigManager.resetConfig();
-      
-      // Hide reset button
-      const resetButton = document.getElementById('resetConfigButton');
-      if (resetButton) {
-        resetButton.style.display = 'none';
-      }
-      
-      // Refresh all rows with default config
-      await this.refreshAllRows();
-      
-      this.showMessage('Reset to default configuration', 'success');
-    } catch (error) {
-      console.error('Failed to reset config:', error);
-      this.showError('Failed to reset configuration');
     }
   }
 

@@ -33,11 +33,6 @@ export class ConfigManager {
     this.saveToStorage(config);
   }
 
-  static resetConfig() {
-    this.currentConfig = null;
-    this.clearStorage();
-  }
-
   static saveToStorage(config) {
     try {
       const configData = {
