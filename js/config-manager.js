@@ -1,15 +1,26 @@
 /**
  * Configuration Manager
- * Handles all configuration-related operations
+ * Handles all configuration-related operations with persistence
  */
 export class ConfigManager {
   static currentConfig = null;
+  static STORAGE_KEY = 'scriptrunner_config';
 
   static async getConfig() {
     try {
+      // First check if we have a current config in memory
       if (this.currentConfig) {
         return this.currentConfig;
       }
+      
+      // Try to load from localStorage
+      const savedConfig = this.loadFromStorage();
+      if (savedConfig) {
+        this.currentConfig = savedConfig;
+        return savedConfig;
+      }
+      
+      // Fall back to default config from API
       return await window.API.get_config();
     } catch (error) {
       console.error('Failed to load configuration:', error);
@@ -19,10 +30,79 @@ export class ConfigManager {
 
   static setConfig(config) {
     this.currentConfig = config;
+    this.saveToStorage(config);
   }
 
   static resetConfig() {
     this.currentConfig = null;
+    this.clearStorage();
+  }
+
+  static saveToStorage(config) {
+    try {
+      const configData = {
+        config: config,
+        timestamp: Date.now(),
+        version: '1.0'
+      };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(configData));
+      console.log('Configuration saved to storage');
+    } catch (error) {
+      console.error('Failed to save configuration to storage:', error);
+    }
+  }
+
+  static loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+      
+      const configData = JSON.parse(stored);
+      
+      // Validate the stored config
+      if (configData.config && this.validateConfig(configData.config)) {
+        console.log('Configuration loaded from storage');
+        return configData.config;
+      } else {
+        console.warn('Invalid configuration in storage, clearing...');
+        this.clearStorage();
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to load configuration from storage:', error);
+      this.clearStorage();
+      return null;
+    }
+  }
+
+  static clearStorage() {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      console.log('Configuration storage cleared');
+    } catch (error) {
+      console.error('Failed to clear configuration storage:', error);
+    }
+  }
+
+  static getStorageInfo() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+      
+      const configData = JSON.parse(stored);
+      return {
+        hasConfig: true,
+        timestamp: configData.timestamp,
+        lastLoaded: new Date(configData.timestamp).toLocaleString(),
+        version: configData.version || 'unknown'
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   static async loadConfigFromFile(file) {
