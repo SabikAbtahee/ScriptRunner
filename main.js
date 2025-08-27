@@ -477,12 +477,14 @@ function copyToDestination(event, param) {
     command.on('close', (code) => {
       const commandString = `cpx "${sourcePattern}" "${destinationPath}"`;
       sendOutput(event, 'copy_output', commandString, param.progress, false);
-      sendOutput(event, 'copy_output', `Copy completed with exit code: ${code}`, param.progress, true);
       
       if (code !== 0) {
         console.error(`Copy failed with exit code: ${code}`);
+        sendOutput(event, 'copy_output', `Copy failed with exit code: ${code}`, param.progress, true);
       } else {
         console.log('Copy completed successfully');
+        sendOutput(event, 'copy_output', 'Copy completed successfully', param.progress, false);
+        sendOutput(event, 'copy_output', `${code}`, param.progress, true);
       }
     });
 

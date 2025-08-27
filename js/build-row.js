@@ -484,21 +484,25 @@ export class BuildRow {
   /**
    * Set completed status for build operations
    */
-  setBuildCompleteStatus(operationType) {
+  setBuildCompleteStatus(operationType, isSuccess = true) {
     // Update status to completed with date
-    const statusText = operationType === 'build' ? 'Build Done' : 'Copied';
+    const statusText = operationType === 'build' ? 
+      (isSuccess ? 'Build Done' : 'Build Failed') : 
+      (isSuccess ? 'Copied' : 'Copy Failed');
     const currentDate = new Date().toLocaleString();
     
     // If this is a copy operation and we already have a build status, add copied status
     const statusDiv = document.getElementById(`build-status-${this.rowId}`);
     if (operationType === 'copy' && statusDiv && statusDiv.innerHTML.includes('Build Done')) {
       // Add copied status alongside build done
+      const combinedText = isSuccess ? 'Build Done & Copied' : 'Build Done & Copy Failed';
       statusDiv.innerHTML = `
         <span class="status__dot"></span>
-        <span class="status__text">Build Done & Copied - ${currentDate}</span>
+        <span class="status__text">${combinedText} - ${currentDate}</span>
       `;
     } else {
-      this.updateStatus('compiled', `${statusText} - ${currentDate}`);
+      const statusType = isSuccess ? 'compiled' : 'error';
+      this.updateStatus(statusType, `${statusText} - ${currentDate}`);
     }
     
     // Stop individual timer
@@ -508,7 +512,7 @@ export class BuildRow {
   /**
    * Handle install completion
    */
-  onInstallComplete(data) {
+  onInstallComplete(isSuccess) {
     // Re-enable install button
     const installButton = document.getElementById(`install-button-${this.rowId}`);
     if (installButton) {
@@ -519,7 +523,7 @@ export class BuildRow {
     const currentDate = new Date().toLocaleString();
     
     // Check if install was successful
-    if (data.includes('exit code: 0') || data.includes('Install completed with exit code: 0')) {
+    if (isSuccess) {
       this.updateStatus('installed', `Install Done - ${currentDate}`);
     } else {
       this.updateStatus('error', `Install Failed - ${currentDate}`);

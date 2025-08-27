@@ -325,7 +325,7 @@ export class AppRow {
   /**
    * Handle install completion
    */
-  onInstallComplete(data) {
+  onInstallComplete(isSuccess) {
     // Re-enable install button
     const installButton = document.getElementById(`install-button-${this.rowId}`);
     if (installButton) {
@@ -336,7 +336,7 @@ export class AppRow {
     const currentDate = new Date().toLocaleString();
     
     // Check if install was successful
-    if (data.includes('exit code: 0') || data.includes('Install completed with exit code: 0')) {
+    if (isSuccess) {
       this.updateStatus('installed', `Install Done - ${currentDate}`);
     } else {
       this.updateStatus('error', `Install Failed - ${currentDate}`);

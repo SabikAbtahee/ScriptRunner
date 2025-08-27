@@ -199,9 +199,32 @@ export class ProcessManager {
         element.classList.remove('u-hidden');
         element.innerText += data + '\n';
         element.scrollTop = element.scrollHeight;
+        
+        // Check for build errors during the process
+        if (data.includes('ERROR') || data.includes('Error') || data.includes('error') ||
+            data.includes('Build failed') || data.includes('compilation failed') ||
+            data.includes('ng build failed') || data.includes('webpack failed') ||
+            data.includes('Module not found') || data.includes('Cannot resolve') ||
+            data.includes('Compilation error') || data.includes('TypeScript error') ||
+            data.includes('✘') || data.includes('✗') || data.includes('Failed to compile')) {
+          element.className = 'terminal terminal--error';
+        }
+        
+        // Check for successful build completion
+        if (data.includes('✓ Built') || data.includes('✓ Compiled') ||
+            data.includes('Build complete') || data.includes('webpack compiled successfully') ||
+            data.includes('Application bundle generation complete') ||
+            data.includes('build completed successfully')) {
+          element.className = 'terminal terminal--success';
+        }
       }
     } else {
       // Don't show redundant terminal text, the status indicator will show completion
+      
+      // Check if build failed based on exit code or final output
+      const element = document.getElementById(`build-${progress}`);
+      const isBuildError = element && (element.className.includes('terminal--error') || 
+                                     data !== '0'); // Non-zero exit code indicates failure
       
       // Re-enable build button - extract row ID from progress ID
       const rowId = progress.replace('progress-', '');
@@ -211,7 +234,11 @@ export class ProcessManager {
       // Stop individual timer for build row and show completion status
       const buildRowInstance = this.buildRows.get(parseInt(rowId));
       if (buildRowInstance) {
-        buildRowInstance.setBuildCompleteStatus('build');
+        if (isBuildError) {
+          buildRowInstance.setBuildCompleteStatus('build', false); // false indicates failure
+        } else {
+          buildRowInstance.setBuildCompleteStatus('build', true); // true indicates success
+        }
       }
       
       // Stop timer for this operation
@@ -226,9 +253,28 @@ export class ProcessManager {
         element.classList.remove('u-hidden');
         element.innerText += data + '\n';
         element.scrollTop = element.scrollHeight;
+        
+        // Check for copy errors during the process
+        if (data.includes('ERROR') || data.includes('Error') || data.includes('error') ||
+            data.includes('permission denied') || data.includes('ENOENT') ||
+            data.includes('EACCES') || data.includes('cannot copy') ||
+            data.includes('failed to copy') || data.includes('no such file')) {
+          element.className = 'terminal terminal--error';
+        }
+        
+        // Check for successful copy completion
+        if (data.includes('Copy completed successfully') || data.includes('copied successfully') || 
+            data.includes('copy completed') || data.includes('files copied') || data.includes('✓')) {
+          element.className = 'terminal terminal--success';
+        }
       }
     } else {
       // Don't show redundant terminal text, the status indicator will show completion
+      
+      // Check if copy failed based on terminal content or exit code
+      const element = document.getElementById(`build-${progress}`);
+      const isCopyError = element && (element.className.includes('terminal--error') || 
+                                     data !== '0'); // Non-zero exit code indicates failure
       
       // Re-enable buttons - extract row ID from progress ID
       const rowId = progress.replace('progress-', '');
@@ -240,7 +286,7 @@ export class ProcessManager {
       // Stop individual timer for build row and show completion status
       const buildRowInstance = this.buildRows.get(parseInt(rowId));
       if (buildRowInstance) {
-        buildRowInstance.setBuildCompleteStatus('copy');
+        buildRowInstance.setBuildCompleteStatus('copy', !isCopyError);
       }
       
       // Stop timer for this operation
@@ -327,9 +373,29 @@ export class ProcessManager {
       element.innerText += data + '\n';
       element.scrollTop = element.scrollHeight;
 
+      // Check for successful installation patterns
+      if (data.includes('added') && data.includes('packages') || 
+          data.includes('up to date') || 
+          data.includes('audited') && data.includes('packages') ||
+          data.includes('found 0 vulnerabilities')) {
+        element.className = 'terminal terminal--success';
+      }
+      
+      // Check for errors - npm specific error patterns
+      if (data.includes('ERROR') || data.includes('error') || data.includes('Error') ||
+          data.includes('ENOENT') || data.includes('EACCES') || data.includes('npm ERR!') ||
+          data.includes('ERESOLVE') || data.includes('permission denied') ||
+          data.includes('ENOTFOUND') || data.includes('network error') ||
+          data.includes('code E') || data.includes('errno -')) {
+        element.className = 'terminal terminal--error';
+      }
+
       if (isDone) {
         // Stop timer for this operation
         this.stopTimerForOperation(progress);
+        
+        // Determine if installation was successful or failed
+        const isSuccess = element && !element.className.includes('terminal--error');
         
         // Find the row instance and re-enable buttons
         const rowId = progress.replace(/^(app|build)-progress-/, '');
@@ -337,11 +403,11 @@ export class ProcessManager {
         const appRowInstance = this.appRows.get(parseInt(rowId));
         
         if (buildRowInstance) {
-          buildRowInstance.onInstallComplete(data);
+          buildRowInstance.onInstallComplete(isSuccess);
         }
         
         if (appRowInstance) {
-          appRowInstance.onInstallComplete(data);
+          appRowInstance.onInstallComplete(isSuccess);
         }
       }
     }
