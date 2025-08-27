@@ -75,6 +75,18 @@
   color: white;
 }
 
+/* Restart button variant - orange color */
+.btn--restart {
+  background-color: #f97316;
+  color: white;
+}
+
+/* Run button variant - teal color */
+.btn--run {
+  background-color: #14b8a6;
+  color: white;
+}
+
 /* Button variant hover states */
 .btn--success:hover:not(.btn--disabled) {
   background-color: var(--success-light);
@@ -103,6 +115,14 @@
 
 .btn--copy:hover:not(.btn--disabled) {
   background-color: #7c3aed;
+}
+
+.btn--restart:hover:not(.btn--disabled) {
+  background-color: #ea580c;
+}
+
+.btn--run:hover:not(.btn--disabled) {
+  background-color: #0f766e;
 }
 
 .btn--disabled {
@@ -163,6 +183,29 @@
 
 .btn--with-text span {
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing);
+}
+
+/* Button with icon (using new createButton method) */
+.btn--with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+}
+
+.btn--with-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.btn--with-icon span {
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing);

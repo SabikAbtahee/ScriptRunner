@@ -106,14 +106,16 @@ export class AppRow {
     // Run button
     const runButton = DOMUtils.createButton('Run', {
       id: `run-button-${this.rowId}`,
-      variant: 'btn--success'
+      variant: 'btn--run',
+      icon: DOMUtils.getButtonIcon('run')
     });
     DOMUtils.addSafeEventListener(runButton, 'click', () => this.handleRun());
 
     // Restart button
     const restartButton = DOMUtils.createButton('Restart', {
       id: `restart-button-${this.rowId}`,
-      variant: 'btn--warning'
+      variant: 'btn--restart',
+      icon: DOMUtils.getButtonIcon('restart')
     });
     DOMUtils.addSafeEventListener(restartButton, 'click', () => this.handleRestart());
 

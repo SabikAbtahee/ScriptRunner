@@ -161,21 +161,24 @@ export class BuildRow {
     // Build & Copy button
     const buildButton = DOMUtils.createButton('Build & Copy', {
       id: `build-button-${this.rowId}`,
-      variant: 'btn--primary'
+      variant: 'btn--primary',
+      icon: DOMUtils.getButtonIcon('build')
     });
     DOMUtils.addSafeEventListener(buildButton, 'click', () => this.handleBuildAndCopy());
 
     // Copy button
     const copyButton = DOMUtils.createButton('Copy', {
       id: `copy-button-${this.rowId}`,
-      variant: 'btn--copy'
+      variant: 'btn--copy',
+      icon: DOMUtils.getButtonIcon('copy')
     });
     DOMUtils.addSafeEventListener(copyButton, 'click', () => this.handleCopy());
 
     // Watch button
     const watchButton = DOMUtils.createButton('Watch', {
       id: `watch-button-${this.rowId}`,
-      variant: 'btn--warning'
+      variant: 'btn--warning',
+      icon: DOMUtils.getButtonIcon('watch')
     });
     DOMUtils.addSafeEventListener(watchButton, 'click', () => this.handleWatch());
 
