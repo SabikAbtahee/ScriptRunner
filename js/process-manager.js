@@ -282,7 +282,7 @@ export class ProcessManager {
   // Check if the output indicates successful compilation
   isCompilationSuccessful(data) {
     const successPatterns = [
-      '✔ Compiled successfully.',
+      'Compiled successfully.',
       'webpack compiled successfully',
       'Build completed successfully',
       'Compilation complete',

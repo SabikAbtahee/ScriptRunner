@@ -372,7 +372,7 @@ window.API.app_output((data, progress, rowCounter, pid) =>
     element.scrollTop = element.scrollHeight;
 
     // Check for successful compilation and change background color
-    if (data.includes('✔ Compiled successfully.')) {
+    if (data.includes('Compiled successfully.')) {
         element.style.backgroundColor = '#0d4f2b'; // Dark green background for success
         element.style.color = '#4ade80'; // Light green text
     } else if (data.includes('ERROR') || data.includes('error') || data.includes('Error')) {
