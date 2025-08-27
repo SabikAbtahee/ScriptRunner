@@ -149,9 +149,10 @@ export class AppRow {
       return;
     }
 
-    // Disable run button
+    // Disable run button and remove focus
     const runButton = document.getElementById(`run-button-${this.rowId}`);
     runButton.classList.add('btn--disabled');
+    runButton.blur(); // Remove focus from the button
 
     // Update status
     this.updateStatus('running', 'Running');
@@ -174,9 +175,10 @@ export class AppRow {
       return;
     }
 
-    // Disable restart button
+    // Disable restart button and remove focus
     const restartButton = document.getElementById(`restart-button-${this.rowId}`);
     restartButton.classList.add('btn--disabled');
+    restartButton.blur(); // Remove focus from the button
 
     // Update status
     this.updateStatus('building', 'Restarting');
@@ -229,11 +231,9 @@ export class AppRow {
     // Update status to compiled
     this.updateStatus('compiled', 'Compiled');
     
-    // Re-enable buttons
-    const runButton = document.getElementById(`run-button-${this.rowId}`);
+    // Only re-enable restart button, keep run button disabled
     const restartButton = document.getElementById(`restart-button-${this.rowId}`);
     
-    if (runButton) runButton.classList.remove('btn--disabled');
     if (restartButton) restartButton.classList.remove('btn--disabled');
   }
 

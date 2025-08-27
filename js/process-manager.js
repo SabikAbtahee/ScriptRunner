@@ -181,10 +181,27 @@ export class ProcessManager {
     const element = document.getElementById(progress);
     if (element) {
       element.classList.remove('u-hidden');
-      element.innerText += data + '\n';
+      
+      // Check if this is a warning and if "Compiled successfully" already exists
+      if (this.isWarningOutput(data) && this.hasCompiledSuccessfully(element)) {
+        // Remove the "Compiled successfully" message temporarily
+        const successMessage = this.extractAndRemoveSuccessMessage(element);
+        
+        // Add the warning
+        element.innerText += data + '\n';
+        
+        // Re-append the success message at the end
+        if (successMessage) {
+          element.innerText += successMessage;
+        }
+      } else {
+        // Normal output handling
+        element.innerText += data + '\n';
+      }
+      
       element.scrollTop = element.scrollHeight;
 
-      // Update terminal styling and status based on output
+      // Apply success styling when compilation is successful
       if (this.isCompilationSuccessful(data)) {
         element.className = 'terminal terminal--success';
         
@@ -209,15 +226,62 @@ export class ProcessManager {
   isCompilationSuccessful(data) {
     const successPatterns = [
       '✔ Compiled successfully.',
-      'Compiled successfully',
       'webpack compiled successfully',
       'Build completed successfully',
       'Compilation complete',
       '✓ Compiled'
     ];
     
+    // Also check for patterns that indicate compilation is done with warnings
+    const completionPatterns = [
+      'compiled successfully in',
+      'webpack compiled with',
+      'Compiled with warnings'
+    ];
+    
     return successPatterns.some(pattern => 
       data.toLowerCase().includes(pattern.toLowerCase())
+    ) || completionPatterns.some(pattern => 
+      data.toLowerCase().includes(pattern.toLowerCase())
     );
+  }
+
+  // Check if the output is a warning
+  isWarningOutput(data) {
+    const warningPatterns = [
+      'warning',
+      'warn:',
+      'deprecated',
+      'module not found'
+    ];
+    
+    return warningPatterns.some(pattern => 
+      data.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }
+
+  // Check if the terminal already contains "Compiled successfully"
+  hasCompiledSuccessfully(element) {
+    return element.innerText.toLowerCase().includes('compiled successfully');
+  }
+
+  // Extract and remove the "Compiled successfully" message from terminal
+  extractAndRemoveSuccessMessage(element) {
+    const lines = element.innerText.split('\n');
+    let successMessage = '';
+    const filteredLines = [];
+    
+    for (const line of lines) {
+      if (line.toLowerCase().includes('compiled successfully')) {
+        successMessage = line + '\n';
+      } else {
+        filteredLines.push(line);
+      }
+    }
+    
+    // Update element without the success message
+    element.innerText = filteredLines.join('\n');
+    
+    return successMessage;
   }
 }

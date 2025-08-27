@@ -69,6 +69,12 @@
   background-color: var(--accent-color);
 }
 
+/* Copy button variant - purple color */
+.btn--copy {
+  background-color: #8b5cf6;
+  color: white;
+}
+
 /* Button variant hover states */
 .btn--success:hover:not(.btn--disabled) {
   background-color: var(--success-light);
@@ -95,12 +101,22 @@
   background-color: var(--accent-light);
 }
 
+.btn--copy:hover:not(.btn--disabled) {
+  background-color: #7c3aed;
+}
+
 .btn--disabled {
   color: var(--disabled-text);
   background-color: var(--disabled-color);
   cursor: not-allowed;
   box-shadow: none;
   pointer-events: none;
+  outline: none; /* Remove focus outline on disabled buttons */
+}
+
+.btn--disabled:focus {
+  outline: none; /* Ensure no focus outline on disabled buttons */
+  box-shadow: none;
 }
 
 /* Button sizes */
@@ -128,4 +144,26 @@
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+/* Button with text and icon */
+.btn--with-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+}
+
+.btn--with-text svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.btn--with-text span {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing);
 }

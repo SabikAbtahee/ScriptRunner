@@ -20,7 +20,7 @@
 }
 
 .terminal--success {
-  background-color: var(--success-dark);
+  background-color: var(--terminal-bg);
   color: var(--success-light);
   border-color: var(--success-color);
 }

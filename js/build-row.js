@@ -167,7 +167,7 @@ export class BuildRow {
     // Copy button
     const copyButton = DOMUtils.createButton('Copy', {
       id: `copy-button-${this.rowId}`,
-      variant: 'btn--primary'
+      variant: 'btn--copy'
     });
     DOMUtils.addSafeEventListener(copyButton, 'click', () => this.handleCopy());
 
@@ -212,6 +212,7 @@ export class BuildRow {
 
     const buildButton = document.getElementById(`build-button-${this.rowId}`);
     buildButton.classList.add('btn--disabled');
+    buildButton.blur(); // Remove focus from the button
 
     this.processManager.buildAndCopy(
       sourceSelect.value,
@@ -228,6 +229,7 @@ export class BuildRow {
 
     const copyButton = document.getElementById(`copy-button-${this.rowId}`);
     copyButton.classList.add('btn--disabled');
+    copyButton.blur(); // Remove focus from the button
 
     this.processManager.copy(
       sourceSelect.value,
@@ -247,6 +249,7 @@ export class BuildRow {
 
     const watchButton = document.getElementById(`watch-button-${this.rowId}`);
     watchButton.classList.add('btn--disabled');
+    watchButton.blur(); // Remove focus from the button
 
     // Update close button to handle process killing
     const closeButton = document.getElementById(`close-button-${this.rowId}`);
