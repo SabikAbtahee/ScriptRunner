@@ -39,6 +39,16 @@ const appState = new AppState();
  * Create the main application window
  */
 function createWindow() {
+  // Determine the appropriate icon file based on platform
+  let iconPath;
+  if (process.platform === 'darwin') {
+    iconPath = path.join(__dirname, 'assets/icon.icns');
+  } else if (process.platform === 'win32') {
+    iconPath = path.join(__dirname, 'assets/icon.ico');
+  } else {
+    iconPath = path.join(__dirname, 'assets/icon.png');
+  }
+
   const mainWindow = new BrowserWindow({
     width: 1400,
     height: 1000,
@@ -49,7 +59,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'assets/icon.png'), // Add icon if available
+    icon: fs.existsSync(iconPath) ? iconPath : undefined, // Only set icon if file exists
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
 
