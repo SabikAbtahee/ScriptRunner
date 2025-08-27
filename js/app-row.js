@@ -6,11 +6,12 @@ import { ConfigManager } from './config-manager.js';
  * Handles the creation and management of application rows
  */
 export class AppRow {
-  constructor(container, processManager, rowId) {
+  constructor(container, processManager, rowId, onRemove = null) {
     this.container = container;
     this.processManager = processManager;
     this.rowId = rowId;
     this.element = null;
+    this.onRemove = onRemove;
   }
 
   async create() {
@@ -237,12 +238,51 @@ export class AppRow {
     if (restartButton) restartButton.classList.remove('btn--disabled');
   }
 
+  async refreshSelector() {
+    try {
+      const config = await ConfigManager.getConfig();
+      
+      // Refresh app selector
+      const appSelect = document.getElementById(`app-select-${this.rowId}`);
+      if (appSelect) {
+        this.populateApplicationSelect(appSelect, config);
+      }
+    } catch (error) {
+      console.error('Failed to refresh app row selector:', error);
+    }
+  }
+
+  populateApplicationSelect(select, config) {
+    // Clear existing options except placeholder
+    select.innerHTML = '<option value="" disabled selected>Select an application</option>';
+    
+    // Add application options
+    Object.keys(config.Application || {}).forEach(key => {
+      const app = config.Application[key];
+      const option = DOMUtils.createElement('option', {
+        textContent: app.name,
+        attributes: {
+          value: JSON.stringify({
+            path: app.path,
+            runCommand: app.runCommand
+          })
+        }
+      });
+      select.appendChild(option);
+    });
+  }
+
   remove() {
     // Unregister from process manager
     this.processManager.unregisterAppRow(this.rowId);
     
     if (this.element) {
       DOMUtils.removeElement(this.element);
+    }
+    
+    // Notify parent app about removal
+    if (this.onRemove) {
+      this.onRemove(this.rowId, 'app');
     }
   }
 }

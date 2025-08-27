@@ -6,11 +6,12 @@ import { ConfigManager } from './config-manager.js';
  * Handles the creation and management of build rows
  */
 export class BuildRow {
-  constructor(container, processManager, rowId) {
+  constructor(container, processManager, rowId, onRemove = null) {
     this.container = container;
     this.processManager = processManager;
     this.rowId = rowId;
     this.element = null;
+    this.onRemove = onRemove;
   }
 
   async create() {
@@ -281,9 +282,92 @@ export class BuildRow {
     return true;
   }
 
+  async refreshSelectors() {
+    try {
+      console.log(`Refreshing build row ${this.rowId} selectors`);
+      const config = await ConfigManager.getConfig();
+      console.log('Config for refresh:', config);
+      
+      // Refresh source selector (libraries)
+      const sourceSelect = document.getElementById(`source-select-${this.rowId}`);
+      if (sourceSelect) {
+        console.log('Refreshing source selector');
+        this.populateLibrarySelect(sourceSelect, config);
+      }
+      
+      // Refresh destination selector (libraries + applications)
+      const destSelect = document.getElementById(`dest-select-${this.rowId}`);
+      if (destSelect) {
+        console.log('Refreshing destination selector');
+        this.populateApplicationSelect(destSelect, config);
+      }
+    } catch (error) {
+      console.error('Failed to refresh build row selectors:', error);
+    }
+  }
+
+  populateLibrarySelect(select, config) {
+    // Clear existing options except placeholder
+    select.innerHTML = '<option value="" disabled selected>Select a library</option>';
+    
+    // Add library options
+    Object.keys(config.Library || {}).forEach(key => {
+      const library = config.Library[key];
+      const option = DOMUtils.createElement('option', {
+        textContent: library.name,
+        attributes: {
+          value: JSON.stringify({
+            path: library.path,
+            node_path: library.libPath
+          })
+        }
+      });
+      select.appendChild(option);
+    });
+  }
+
+  populateApplicationSelect(select, config) {
+    // Clear existing options except placeholder
+    select.innerHTML = '<option value="" disabled selected>Select destination</option>';
+    
+    // Add applications
+    Object.keys(config.Application || {}).forEach(key => {
+      const app = config.Application[key];
+      const option = DOMUtils.createElement('option', {
+        textContent: app.name,
+        attributes: {
+          value: JSON.stringify({
+            path: app.path,
+            runCommand: app.runCommand
+          })
+        }
+      });
+      select.appendChild(option);
+    });
+
+    // Add libraries as destinations
+    Object.keys(config.Library || {}).forEach(key => {
+      const library = config.Library[key];
+      const option = DOMUtils.createElement('option', {
+        textContent: library.name,
+        attributes: {
+          value: JSON.stringify({
+            path: library.path
+          })
+        }
+      });
+      select.appendChild(option);
+    });
+  }
+
   remove() {
     if (this.element) {
       DOMUtils.removeElement(this.element);
+    }
+    
+    // Notify parent app about removal
+    if (this.onRemove) {
+      this.onRemove(this.rowId, 'build');
     }
   }
 }

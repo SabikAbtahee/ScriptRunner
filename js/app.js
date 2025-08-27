@@ -1,6 +1,7 @@
 import { BuildRow } from './build-row.js';
 import { AppRow } from './app-row.js';
 import { ProcessManager } from './process-manager.js';
+import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
 
 /**
@@ -12,6 +13,8 @@ class ScriptRunnerApp {
     this.processManager = new ProcessManager();
     this.rowCounter = 0;
     this.container = null;
+    this.buildRows = new Map(); // Track build row instances
+    this.appRows = new Map(); // Track app row instances
     
     this.init();
   }
@@ -43,6 +46,23 @@ class ScriptRunnerApp {
   }
 
   setupEventListeners() {
+    // Load config button
+    const loadConfigButton = document.getElementById('loadConfigButton');
+    const configFileInput = document.getElementById('configFileInput');
+    
+    if (loadConfigButton && configFileInput) {
+      DOMUtils.addSafeEventListener(loadConfigButton, 'click', () => {
+        configFileInput.click();
+      });
+      
+      DOMUtils.addSafeEventListener(configFileInput, 'change', async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          await this.handleConfigFileLoad(file);
+        }
+      });
+    }
+
     // Add build row button
     const addBuildRowButton = document.getElementById('addBuildRowButton');
     if (addBuildRowButton) {
@@ -79,8 +99,16 @@ class ScriptRunnerApp {
   async createBuildRow() {
     try {
       this.rowCounter++;
-      const buildRow = new BuildRow(this.container, this.processManager, this.rowCounter);
+      const buildRow = new BuildRow(
+        this.container, 
+        this.processManager, 
+        this.rowCounter,
+        (rowId, type) => this.handleRowRemoval(rowId, type)
+      );
       await buildRow.create();
+      
+      // Store reference to the row instance
+      this.buildRows.set(this.rowCounter, buildRow);
       
       // Scroll to new row
       buildRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -93,8 +121,16 @@ class ScriptRunnerApp {
   async createAppRow() {
     try {
       this.rowCounter++;
-      const appRow = new AppRow(this.container, this.processManager, this.rowCounter);
+      const appRow = new AppRow(
+        this.container, 
+        this.processManager, 
+        this.rowCounter,
+        (rowId, type) => this.handleRowRemoval(rowId, type)
+      );
       await appRow.create();
+      
+      // Store reference to the row instance
+      this.appRows.set(this.rowCounter, appRow);
       
       // Scroll to new row
       appRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -139,6 +175,85 @@ class ScriptRunnerApp {
     setTimeout(() => {
       DOMUtils.removeElement(errorDiv);
     }, 5000);
+  }
+
+  async handleConfigFileLoad(file) {
+    try {
+      // Show loading state
+      this.showMessage('Loading configuration...', 'info');
+      
+      // Load and validate the config file
+      const config = await ConfigManager.loadConfigFromFile(file);
+      console.log('Config loaded successfully:', config);
+      
+      // Success message
+      this.showMessage(`Configuration loaded: ${file.name}`, 'success');
+      
+      // Refresh all existing rows to use new config
+      await this.refreshAllRows();
+      console.log('All rows refreshed');
+      
+    } catch (error) {
+      console.error('Failed to load config file:', error);
+      this.showError(`Failed to load config: ${error.message}`);
+      
+      // Reset file input
+      const configFileInput = document.getElementById('configFileInput');
+      if (configFileInput) {
+        configFileInput.value = '';
+      }
+    }
+  }
+
+  showMessage(message, type = 'info') {
+    let statusElement = document.getElementById('statusMessage');
+    if (!statusElement) {
+      statusElement = DOMUtils.createElement('div', {
+        id: 'statusMessage',
+        className: `message message--${type}`,
+        style: 'position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; z-index: 1000; background: var(--surface-color); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);'
+      });
+      document.body.appendChild(statusElement);
+    }
+    
+    statusElement.textContent = message;
+    statusElement.className = `message message--${type}`;
+    
+    if (type === 'success' || type === 'info') {
+      setTimeout(() => {
+        if (statusElement && statusElement.parentNode) {
+          statusElement.parentNode.removeChild(statusElement);
+        }
+      }, 3000);
+    }
+  }
+
+  async refreshAllRows() {
+    // Refresh all build rows using stored instances
+    for (const [rowId, buildRow] of this.buildRows) {
+      try {
+        await buildRow.refreshSelectors();
+      } catch (error) {
+        console.error(`Failed to refresh build row ${rowId}:`, error);
+      }
+    }
+    
+    // Refresh all app rows using stored instances
+    for (const [rowId, appRow] of this.appRows) {
+      try {
+        await appRow.refreshSelector();
+      } catch (error) {
+        console.error(`Failed to refresh app row ${rowId}:`, error);
+      }
+    }
+  }
+
+  handleRowRemoval(rowId, type) {
+    if (type === 'build') {
+      this.buildRows.delete(rowId);
+    } else if (type === 'app') {
+      this.appRows.delete(rowId);
+    }
   }
 }
 
