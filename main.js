@@ -3,6 +3,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const kill = require('tree-kill');
 const fs = require('fs');
+const os = require('os');
 
 /**
  * Script Runner 2.0 - Main Process
@@ -161,10 +162,65 @@ function killAllRunningProcesses() {
 
 function parseCommand(command) {
   const parts = command.trim().split(' ');
+  const baseCommand = parts[0];
+  const args = parts.slice(1);
+  
+  // For Angular CLI commands, use npx for better reliability in packaged apps
+  if (baseCommand === 'ng') {
+    return {
+      baseCommand: resolveCommand('npx'),
+      args: ['ng', ...args]
+    };
+  }
+  
+  // For npm commands, try to resolve the full path
+  if (baseCommand === 'npm') {
+    return {
+      baseCommand: resolveCommand('npm'),
+      args
+    };
+  }
+  
+  // For other commands, try to resolve
   return {
-    baseCommand: parts[0],
-    args: parts.slice(1)
+    baseCommand: resolveCommand(baseCommand),
+    args
   };
+}
+
+/**
+ * Get extended PATH that includes common Node.js installation locations
+ */
+function getExtendedPath() {
+  const originalPath = process.env.PATH || '';
+  const commonPaths = [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    '/Users/' + os.userInfo().username + '/.npm-global/bin',
+    process.cwd() + '/node_modules/.bin'
+  ];
+  
+  const allPaths = [originalPath, ...commonPaths].filter(Boolean);
+  return allPaths.join(':');
+}
+
+/**
+ * Try to resolve the full path to a command
+ */
+function resolveCommand(command) {
+  const { execSync } = require('child_process');
+  
+  try {
+    // Try to find the command using which
+    const result = execSync(`which ${command}`, { 
+      encoding: 'utf8',
+      env: { ...process.env, PATH: getExtendedPath() }
+    }).trim();
+    return result || command;
+  } catch (error) {
+    console.log(`Could not resolve path for ${command}, using as-is`);
+    return command;
+  }
 }
 
 function sendOutput(event, channel, data, progress, ...args) {
@@ -199,9 +255,10 @@ ipcMain.handle('build_copy', async (event, param) => {
     
     console.log(`Starting build in: ${directory}`);
     
-    const command = spawn('npm', ['run', 'build'], { 
+    const command = spawn(resolveCommand('npm'), ['run', 'build'], { 
       cwd: directory, 
-      shell: true 
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
     });
 
     command.stdout.on('data', (data) => {
@@ -242,9 +299,10 @@ ipcMain.handle('watch', async (event, param) => {
     
     console.log(`Starting watch in: ${directory}`);
     
-    const command = spawn('ng', ['build', '--watch'], { 
+    const command = spawn(resolveCommand('npx'), ['ng', 'build', '--watch'], { 
       cwd: directory, 
-      shell: true 
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
     });
 
     command.stdout.on('data', (data) => {
@@ -281,9 +339,10 @@ ipcMain.handle('npm_install', async (event, param) => {
     
     console.log(`Starting npm install in: ${directory}`);
     
-    const command = spawn('npm', ['install'], { 
+    const command = spawn(resolveCommand('npm'), ['install'], { 
       cwd: directory, 
-      shell: true 
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
     });
 
     command.stdout.on('data', (data) => {
@@ -355,7 +414,8 @@ ipcMain.handle('run_app', async (event, param) => {
     
     const command = spawn(baseCommand, args, { 
       cwd: directory, 
-      shell: true 
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
     });
     
     // Track this process
@@ -421,7 +481,8 @@ ipcMain.handle('restart_app', async (event, param) => {
     
     const command = spawn(baseCommand, args, { 
       cwd: directory, 
-      shell: true 
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
     });
     
     // Track this process
@@ -474,7 +535,9 @@ function copyToDestination(event, param) {
     console.log(`Copying from: ${sourcePattern}`);
     console.log(`Copying to: ${destinationPath}`);
 
-    const command = spawn('cpx', [sourcePattern, destinationPath]);
+    const command = spawn(resolveCommand('npx'), ['cpx', sourcePattern, destinationPath], {
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
 
     command.stdout.on('data', (data) => {
       sendOutput(event, 'copy_output', data.toString(), param.progress, false);
