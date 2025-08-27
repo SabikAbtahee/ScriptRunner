@@ -3,8 +3,10 @@
  * Handles all process-related operations (build, copy, run, etc.)
  */
 export class ProcessManager {
-  constructor() {
+  constructor(timeTracker = null) {
+    this.timeTracker = timeTracker;
     this.appRows = new Map(); // Track app row instances
+    this.operationTimers = new Map(); // Track operation timers by progressId
     this.setupEventListeners();
   }
 
@@ -40,21 +42,37 @@ export class ProcessManager {
     });
   }
 
-  async buildAndCopy(source, destination, progressId) {
+  async buildAndCopy(source, destination, progressId, operationId = null) {
     try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
       await window.API.build_copy({ source, destination, progress: progressId });
     } catch (error) {
       console.error('Build and copy failed:', error);
       this.showError(progressId, 'Build and copy failed');
+      
+      // Stop timer on error
+      this.stopTimerForOperation(progressId);
     }
   }
 
-  async copy(source, destination, progressId) {
+  async copy(source, destination, progressId, operationId = null) {
     try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
       await window.API.copy({ source, destination, progress: progressId });
     } catch (error) {
       console.error('Copy failed:', error);
       this.showError(progressId, 'Copy failed');
+      
+      // Stop timer on error
+      this.stopTimerForOperation(progressId);
     }
   }
 
@@ -67,8 +85,13 @@ export class ProcessManager {
     }
   }
 
-  async runApp(appPath, progressId, rowCounter) {
+  async runApp(appPath, progressId, rowCounter, operationId = null) {
     try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
       const progressElement = document.getElementById(progressId);
       if (progressElement) {
         this.resetTerminal(progressElement);
@@ -77,11 +100,19 @@ export class ProcessManager {
     } catch (error) {
       console.error('App run failed:', error);
       this.showError(progressId, 'Failed to run application');
+      
+      // Stop timer on error
+      this.stopTimerForOperation(progressId);
     }
   }
 
-  async restartApp(appPath, progressId, rowCounter) {
+  async restartApp(appPath, progressId, rowCounter, operationId = null) {
     try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
       const progressElement = document.getElementById(progressId);
       if (progressElement) {
         this.resetTerminal(progressElement);
@@ -90,6 +121,9 @@ export class ProcessManager {
     } catch (error) {
       console.error('App restart failed:', error);
       this.showError(progressId, 'Failed to restart application');
+      
+      // Stop timer on error
+      this.stopTimerForOperation(progressId);
     }
   }
 
@@ -98,6 +132,17 @@ export class ProcessManager {
       await window.API.kill({ command: parseInt(pid) });
     } catch (error) {
       console.error('Failed to kill process:', error);
+    }
+  }
+
+  /**
+   * Stop timer for an operation and clean up
+   */
+  stopTimerForOperation(progressId) {
+    const operationId = this.operationTimers.get(progressId);
+    if (operationId && this.timeTracker) {
+      this.timeTracker.stopTimer(operationId);
+      this.operationTimers.delete(progressId);
     }
   }
 
@@ -134,6 +179,9 @@ export class ProcessManager {
       const rowId = progress.replace('progress-', '');
       const buildButton = document.getElementById(`build-button-${rowId}`);
       if (buildButton) buildButton.classList.remove('btn--disabled');
+      
+      // Stop timer for this operation
+      this.stopTimerForOperation(progress);
     }
   }
 
@@ -159,6 +207,9 @@ export class ProcessManager {
       const copyButton = document.getElementById(`copy-button-${rowId}`);
       if (buildButton) buildButton.classList.remove('btn--disabled');
       if (copyButton) copyButton.classList.remove('btn--disabled');
+      
+      // Stop timer for this operation
+      this.stopTimerForOperation(progress);
     }
   }
 
@@ -210,8 +261,14 @@ export class ProcessManager {
         if (appRowInstance) {
           appRowInstance.setCompiledStatus();
         }
+        
+        // Stop timer for this operation (run/restart completed successfully)
+        this.stopTimerForOperation(progress);
       } else if (data.includes('ERROR') || data.includes('error') || data.includes('Error')) {
         element.className = 'terminal terminal--error';
+        
+        // Stop timer on error as well
+        this.stopTimerForOperation(progress);
       }
     }
 

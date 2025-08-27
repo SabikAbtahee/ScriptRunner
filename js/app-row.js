@@ -6,9 +6,10 @@ import { ConfigManager } from './config-manager.js';
  * Handles the creation and management of application rows
  */
 export class AppRow {
-  constructor(container, processManager, rowId, onRemove = null) {
+  constructor(container, processManager, timeTracker, rowId, onRemove = null) {
     this.container = container;
     this.processManager = processManager;
+    this.timeTracker = timeTracker;
     this.rowId = rowId;
     this.element = null;
     this.onRemove = onRemove;
@@ -163,10 +164,15 @@ export class AppRow {
     // Update close button to handle process killing
     this.setupProcessKillHandler();
 
+    // Start timing for this operation
+    const operationId = `run-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'run');
+
     this.processManager.runApp(
       appSelect.value,
       `app-progress-${this.rowId}`,
-      this.rowId
+      this.rowId,
+      operationId // Pass operation ID for timer tracking
     );
   }
 
@@ -189,10 +195,15 @@ export class AppRow {
     // Update close button to handle process killing
     this.setupProcessKillHandler();
 
+    // Start timing for this operation
+    const operationId = `restart-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'restart');
+
     this.processManager.restartApp(
       appSelect.value,
       `app-progress-${this.rowId}`,
-      this.rowId
+      this.rowId,
+      operationId // Pass operation ID for timer tracking
     );
   }
 

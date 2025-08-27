@@ -40,6 +40,35 @@
   font-style: italic;
 }
 
+.header__time-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.header__time-spent {
+  font-family: var(--font-family-primary);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  color: var(--primary-color);
+  opacity: 0.9;
+}
+
+.header__time-spent span {
+  font-weight: var(--font-weight-semibold);
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.header__time-spent span:hover {
+  background-color: var(--surface-color);
+  opacity: 1;
+}
+
 .header__actions {
   display: flex;
   gap: var(--spacing-sm);

@@ -3,6 +3,7 @@ import { AppRow } from './app-row.js';
 import { ProcessManager } from './process-manager.js';
 import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
+import { TimeTracker } from './time-tracker.js';
 
 /**
  * Main Application Class
@@ -10,7 +11,8 @@ import { DOMUtils } from './dom-utils.js';
  */
 class ScriptRunnerApp {
   constructor() {
-    this.processManager = new ProcessManager();
+    this.timeTracker = new TimeTracker();
+    this.processManager = new ProcessManager(this.timeTracker);
     this.rowCounter = 0;
     this.container = null;
     this.buildRows = new Map(); // Track build row instances
@@ -103,6 +105,7 @@ class ScriptRunnerApp {
       const buildRow = new BuildRow(
         this.container, 
         this.processManager, 
+        this.timeTracker,
         this.rowCounter,
         (rowId, type) => this.handleRowRemoval(rowId, type)
       );
@@ -125,6 +128,7 @@ class ScriptRunnerApp {
       const appRow = new AppRow(
         this.container, 
         this.processManager, 
+        this.timeTracker,
         this.rowCounter,
         (rowId, type) => this.handleRowRemoval(rowId, type)
       );
@@ -137,7 +141,7 @@ class ScriptRunnerApp {
       appRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       console.error('Failed to create app row:', error);
-      this.showError('Failed to create application row');
+      this.showError('Failed to create app row');
     }
   }
 

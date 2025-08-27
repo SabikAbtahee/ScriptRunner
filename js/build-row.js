@@ -6,9 +6,10 @@ import { ConfigManager } from './config-manager.js';
  * Handles the creation and management of build rows
  */
 export class BuildRow {
-  constructor(container, processManager, rowId, onRemove = null) {
+  constructor(container, processManager, timeTracker, rowId, onRemove = null) {
     this.container = container;
     this.processManager = processManager;
+    this.timeTracker = timeTracker;
     this.rowId = rowId;
     this.element = null;
     this.onRemove = onRemove;
@@ -218,10 +219,15 @@ export class BuildRow {
     buildButton.classList.add('btn--disabled');
     buildButton.blur(); // Remove focus from the button
 
+    // Start timing for this operation
+    const operationId = `build-copy-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'build-copy');
+
     this.processManager.buildAndCopy(
       sourceSelect.value,
       destSelect.value,
-      `progress-${this.rowId}`
+      `progress-${this.rowId}`,
+      operationId // Pass operation ID for timer tracking
     );
   }
 
@@ -235,10 +241,15 @@ export class BuildRow {
     copyButton.classList.add('btn--disabled');
     copyButton.blur(); // Remove focus from the button
 
+    // Start timing for this operation
+    const operationId = `copy-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'copy');
+
     this.processManager.copy(
       sourceSelect.value,
       destSelect.value,
-      `progress-${this.rowId}`
+      `progress-${this.rowId}`,
+      operationId // Pass operation ID for timer tracking
     );
   }
 
