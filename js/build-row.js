@@ -13,6 +13,11 @@ export class BuildRow {
     this.rowId = rowId;
     this.element = null;
     this.onRemove = onRemove;
+    
+    // Individual timer properties
+    this.currentOperationStart = null;
+    this.currentOperationTime = 0;
+    this.timerInterval = null;
   }
 
   async create() {
@@ -20,6 +25,10 @@ export class BuildRow {
       const config = await ConfigManager.getConfig();
       this.element = this.createRowElement(config);
       this.container.appendChild(this.element);
+      
+      // Register this instance with the process manager
+      this.processManager.registerBuildRow(this.rowId, this);
+      
       return this.element;
     } catch (error) {
       console.error('Failed to create build row:', error);
@@ -198,6 +207,19 @@ export class BuildRow {
       className: 'terminal terminal--centered u-hidden'
     });
 
+    // Individual time display for this build row
+    const timeDiv = DOMUtils.createElement('div', {
+      className: 'build-time u-hidden',
+      id: `build-time-${this.rowId}`,
+      innerHTML: '<span class="build-time__label">Time Spent:</span> <span class="build-time__value">0s</span>'
+    });
+
+    // Status indicator for build operations
+    const statusDiv = DOMUtils.createElement('div', {
+      className: 'status u-hidden',
+      id: `build-status-${this.rowId}`
+    });
+
     actions.appendChild(buildButton);
     actions.appendChild(copyButton);
     actions.appendChild(watchButton);
@@ -205,6 +227,8 @@ export class BuildRow {
     controls.appendChild(actions);
     controls.appendChild(closeButton);
     controls.appendChild(progressDiv);
+    controls.appendChild(statusDiv);
+    controls.appendChild(timeDiv);
 
     return controls;
   }
@@ -218,6 +242,12 @@ export class BuildRow {
     const buildButton = document.getElementById(`build-button-${this.rowId}`);
     buildButton.classList.add('btn--disabled');
     buildButton.blur(); // Remove focus from the button
+
+    // Update status to building
+    this.updateStatus('building', 'Building');
+
+    // Start individual timer for this operation
+    this.startIndividualTimer();
 
     // Start timing for this operation
     const operationId = `build-copy-${this.rowId}`;
@@ -240,6 +270,12 @@ export class BuildRow {
     const copyButton = document.getElementById(`copy-button-${this.rowId}`);
     copyButton.classList.add('btn--disabled');
     copyButton.blur(); // Remove focus from the button
+
+    // Update status to copying
+    this.updateStatus('building', 'Copying');
+
+    // Start individual timer for this operation
+    this.startIndividualTimer();
 
     // Start timing for this operation
     const operationId = `copy-${this.rowId}`;
@@ -374,7 +410,153 @@ export class BuildRow {
     });
   }
 
+  /**
+   * Update build status display
+   */
+  updateStatus(type, text) {
+    const statusDiv = document.getElementById(`build-status-${this.rowId}`);
+    if (statusDiv) {
+      statusDiv.className = `status status--${type}`;
+      statusDiv.innerHTML = `
+        <span class="status__dot"></span>
+        <span class="status__text">${text}</span>
+      `;
+      statusDiv.classList.remove('u-hidden');
+    }
+  }
+
+  /**
+   * Set completed status for build operations
+   */
+  setBuildCompleteStatus(operationType) {
+    // Update status to completed with date
+    const statusText = operationType === 'build' ? 'Build Done' : 'Copied';
+    const currentDate = new Date().toLocaleString();
+    
+    // If this is a copy operation and we already have a build status, add copied status
+    const statusDiv = document.getElementById(`build-status-${this.rowId}`);
+    if (operationType === 'copy' && statusDiv && statusDiv.innerHTML.includes('Build Done')) {
+      // Add copied status alongside build done
+      statusDiv.innerHTML = `
+        <span class="status__dot"></span>
+        <span class="status__text">Build Done & Copied - ${currentDate}</span>
+      `;
+    } else {
+      this.updateStatus('compiled', `${statusText} - ${currentDate}`);
+    }
+    
+    // Stop individual timer
+    this.stopIndividualTimer();
+  }
+
+  /**
+   * Start individual timer for this build row
+   */
+  startIndividualTimer() {
+    this.currentOperationStart = Date.now();
+    this.currentOperationTime = 0;
+    
+    // Show time display
+    const timeDiv = document.getElementById(`build-time-${this.rowId}`);
+    if (timeDiv) {
+      timeDiv.classList.remove('u-hidden');
+    }
+    
+    // Update timer every second
+    this.timerInterval = setInterval(() => {
+      this.updateIndividualTimeDisplay();
+    }, 1000);
+    
+    // Initial display update
+    this.updateIndividualTimeDisplay();
+  }
+
+  /**
+   * Stop individual timer for this build row
+   */
+  stopIndividualTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    
+    // Calculate final time
+    if (this.currentOperationStart) {
+      this.currentOperationTime = Math.round((Date.now() - this.currentOperationStart) / 1000);
+      this.currentOperationStart = null;
+    }
+    
+    // Final display update
+    this.updateIndividualTimeDisplay();
+  }
+
+  /**
+   * Reset individual timer (for new operations)
+   */
+  resetIndividualTimer() {
+    this.stopIndividualTimer();
+    this.currentOperationTime = 0;
+    
+    // Hide time display
+    const timeDiv = document.getElementById(`build-time-${this.rowId}`);
+    if (timeDiv) {
+      timeDiv.classList.add('u-hidden');
+    }
+  }
+
+  /**
+   * Update the individual time display
+   */
+  updateIndividualTimeDisplay() {
+    const timeValueSpan = document.querySelector(`#build-time-${this.rowId} .build-time__value`);
+    if (timeValueSpan) {
+      let currentTime = this.currentOperationTime;
+      
+      // If timer is running, calculate current elapsed time
+      if (this.currentOperationStart) {
+        currentTime = Math.round((Date.now() - this.currentOperationStart) / 1000);
+      }
+      
+      timeValueSpan.textContent = this.formatTime(currentTime);
+    }
+  }
+
+  /**
+   * Format time in seconds to human readable format
+   */
+  formatTime(seconds) {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      if (remainingSeconds === 0) {
+        return `${minutes}m`;
+      }
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      
+      let result = `${hours}h`;
+      if (minutes > 0) {
+        result += ` ${minutes}m`;
+      }
+      if (remainingSeconds > 0) {
+        result += ` ${remainingSeconds}s`;
+      }
+      return result;
+    }
+  }
+
   remove() {
+    // Stop individual timer cleanup
+    this.stopIndividualTimer();
+    
+    // Unregister from process manager
+    this.processManager.unregisterBuildRow(this.rowId);
+    
     if (this.element) {
       DOMUtils.removeElement(this.element);
     }

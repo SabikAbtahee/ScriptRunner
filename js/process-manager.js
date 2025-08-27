@@ -6,6 +6,7 @@ export class ProcessManager {
   constructor(timeTracker = null) {
     this.timeTracker = timeTracker;
     this.appRows = new Map(); // Track app row instances
+    this.buildRows = new Map(); // Track build row instances
     this.operationTimers = new Map(); // Track operation timers by progressId
     this.setupEventListeners();
   }
@@ -18,6 +19,16 @@ export class ProcessManager {
   // Unregister an app row instance
   unregisterAppRow(rowCounter) {
     this.appRows.delete(rowCounter);
+  }
+
+  // Register a build row instance
+  registerBuildRow(rowCounter, buildRowInstance) {
+    this.buildRows.set(rowCounter, buildRowInstance);
+  }
+
+  // Unregister a build row instance
+  unregisterBuildRow(rowCounter) {
+    this.buildRows.delete(rowCounter);
   }
 
   setupEventListeners() {
@@ -168,17 +179,18 @@ export class ProcessManager {
         element.scrollTop = element.scrollHeight;
       }
     } else {
-      const element = document.getElementById(progress);
-      if (element) {
-        element.classList.remove('u-hidden');
-        const now = new Date();
-        element.innerText = `Build Done: ${now.toLocaleTimeString()}\n`;
-      }
+      // Don't show redundant terminal text, the status indicator will show completion
       
       // Re-enable build button - extract row ID from progress ID
       const rowId = progress.replace('progress-', '');
       const buildButton = document.getElementById(`build-button-${rowId}`);
       if (buildButton) buildButton.classList.remove('btn--disabled');
+      
+      // Stop individual timer for build row and show completion status
+      const buildRowInstance = this.buildRows.get(parseInt(rowId));
+      if (buildRowInstance) {
+        buildRowInstance.setBuildCompleteStatus('build');
+      }
       
       // Stop timer for this operation
       this.stopTimerForOperation(progress);
@@ -194,12 +206,7 @@ export class ProcessManager {
         element.scrollTop = element.scrollHeight;
       }
     } else {
-      const element = document.getElementById(progress);
-      if (element) {
-        element.classList.remove('u-hidden');
-        const now = new Date();
-        element.innerText += `Copied: ${now.toLocaleTimeString()}\n`;
-      }
+      // Don't show redundant terminal text, the status indicator will show completion
       
       // Re-enable buttons - extract row ID from progress ID
       const rowId = progress.replace('progress-', '');
@@ -207,6 +214,12 @@ export class ProcessManager {
       const copyButton = document.getElementById(`copy-button-${rowId}`);
       if (buildButton) buildButton.classList.remove('btn--disabled');
       if (copyButton) copyButton.classList.remove('btn--disabled');
+      
+      // Stop individual timer for build row and show completion status
+      const buildRowInstance = this.buildRows.get(parseInt(rowId));
+      if (buildRowInstance) {
+        buildRowInstance.setBuildCompleteStatus('copy');
+      }
       
       // Stop timer for this operation
       this.stopTimerForOperation(progress);

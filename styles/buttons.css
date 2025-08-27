@@ -87,6 +87,12 @@
   color: white;
 }
 
+/* App button variant - bright magenta color */
+.btn--app {
+  background-color: #ff00f5;
+  color: white;
+}
+
 /* Button variant hover states */
 .btn--success:hover:not(.btn--disabled) {
   background-color: var(--success-light);
@@ -123,6 +129,10 @@
 
 .btn--run:hover:not(.btn--disabled) {
   background-color: #0f766e;
+}
+
+.btn--app:hover:not(.btn--disabled) {
+  background-color: #e600dc;
 }
 
 .btn--disabled {

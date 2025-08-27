@@ -51,7 +51,7 @@
   font-size: 12px;
   font-weight: var(--font-weight-medium);
   margin: 0;
-  color: var(--primary-color);
+  color: #46ff6c;
   opacity: 0.9;
 }
 
@@ -88,6 +88,29 @@
 
 .app-time__value {
   color: var(--accent-color);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-mono);
+}
+
+/* Build row individual time display */
+.build-time {
+  font-family: var(--font-family-primary);
+  font-size: 11px;
+  margin-top: var(--spacing-xs);
+  padding: 4px 8px;
+  background-color: var(--surface-color);
+  border-radius: 4px;
+  border-left: 3px solid var(--primary-color);
+  opacity: 0.9;
+}
+
+.build-time__label {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.build-time__value {
+  color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
   font-family: var(--font-family-mono);
 }
