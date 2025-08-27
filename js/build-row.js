@@ -192,6 +192,14 @@ export class BuildRow {
     });
     DOMUtils.addSafeEventListener(watchButton, 'click', () => this.handleWatch());
 
+    // Install button
+    const installButton = DOMUtils.createButton('Install', {
+      id: `install-button-${this.rowId}`,
+      variant: 'btn--install',
+      icon: DOMUtils.getButtonIcon('install')
+    });
+    DOMUtils.addSafeEventListener(installButton, 'click', () => this.handleInstall());
+
     // Close button
     const closeButton = DOMUtils.createElement('button', {
       className: 'btn btn--error btn--icon',
@@ -223,6 +231,7 @@ export class BuildRow {
     actions.appendChild(buildButton);
     actions.appendChild(copyButton);
     actions.appendChild(watchButton);
+    actions.appendChild(installButton);
     
     controls.appendChild(actions);
     controls.appendChild(closeButton);
@@ -320,8 +329,55 @@ export class BuildRow {
     );
   }
 
+  handleInstall() {
+    const sourceSelect = document.getElementById(`source-select-${this.rowId}`);
+    
+    if (!sourceSelect.value) {
+      alert('Please select a source library');
+      return;
+    }
+
+    const installButton = document.getElementById(`install-button-${this.rowId}`);
+    installButton.classList.add('btn--disabled');
+    installButton.blur(); // Remove focus from the button
+
+    // Update status to installing
+    this.updateStatus('installing', 'Installing');
+
+    // Start individual timer for this operation
+    this.startIndividualTimer();
+
+    // Setup process kill handler
+    this.setupProcessKillHandler();
+
+    // Start timing for this operation
+    const operationId = `install-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'install');
+
+    this.processManager.install(
+      sourceSelect.value,
+      `build-progress-${this.rowId}`,
+      operationId
+    );
+  }
+
   handleClose() {
     this.remove();
+  }
+
+  setupProcessKillHandler() {
+    const closeButton = document.getElementById(`close-button-${this.rowId}`);
+    closeButton.onclick = () => {
+      const pid = closeButton.dataset.pid;
+      if (pid) {
+        this.processManager.killProcess(pid);
+      }
+      
+      // Stop individual timer when killing process
+      this.stopIndividualTimer();
+      
+      this.remove();
+    };
   }
 
   validateSelections(sourceSelect, destSelect) {
@@ -443,6 +499,30 @@ export class BuildRow {
       `;
     } else {
       this.updateStatus('compiled', `${statusText} - ${currentDate}`);
+    }
+    
+    // Stop individual timer
+    this.stopIndividualTimer();
+  }
+
+  /**
+   * Handle install completion
+   */
+  onInstallComplete(data) {
+    // Re-enable install button
+    const installButton = document.getElementById(`install-button-${this.rowId}`);
+    if (installButton) {
+      installButton.classList.remove('btn--disabled');
+    }
+
+    // Update status to completed with date
+    const currentDate = new Date().toLocaleString();
+    
+    // Check if install was successful
+    if (data.includes('exit code: 0') || data.includes('Install completed with exit code: 0')) {
+      this.updateStatus('installed', `Install Done - ${currentDate}`);
+    } else {
+      this.updateStatus('error', `Install Failed - ${currentDate}`);
     }
     
     // Stop individual timer

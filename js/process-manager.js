@@ -51,6 +51,11 @@ export class ProcessManager {
     window.API.app_output((data, progress, rowCounter, pid) => {
       this.handleAppOutput(data, progress, rowCounter, pid);
     });
+
+    // Install output listener
+    window.API.install_output((data, progress, isDone) => {
+      this.handleInstallOutput(data, progress, isDone);
+    });
   }
 
   async buildAndCopy(source, destination, progressId, operationId = null) {
@@ -93,6 +98,23 @@ export class ProcessManager {
     } catch (error) {
       console.error('Watch failed:', error);
       this.showError(progressId, 'Watch failed');
+    }
+  }
+
+  async install(path, progressId, operationId = null) {
+    try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
+      await window.API.npm_install({ path, progress: progressId });
+    } catch (error) {
+      console.error('Install failed:', error);
+      this.showError(progressId, 'Install failed');
+      
+      // Stop timer on error
+      this.stopTimerForOperation(progressId);
     }
   }
 
@@ -295,6 +317,33 @@ export class ProcessManager {
     const closeButton = document.getElementById(`app-close-button-${rowCounter}`);
     if (closeButton) {
       closeButton.dataset.pid = pid;
+    }
+  }
+
+  handleInstallOutput(data, progress, isDone) {
+    const element = document.getElementById(progress);
+    if (element) {
+      element.classList.remove('u-hidden');
+      element.innerText += data + '\n';
+      element.scrollTop = element.scrollHeight;
+
+      if (isDone) {
+        // Stop timer for this operation
+        this.stopTimerForOperation(progress);
+        
+        // Find the row instance and re-enable buttons
+        const rowId = progress.replace(/^(app|build)-progress-/, '');
+        const buildRowInstance = this.buildRows.get(parseInt(rowId));
+        const appRowInstance = this.appRows.get(parseInt(rowId));
+        
+        if (buildRowInstance) {
+          buildRowInstance.onInstallComplete(data);
+        }
+        
+        if (appRowInstance) {
+          appRowInstance.onInstallComplete(data);
+        }
+      }
     }
   }
 

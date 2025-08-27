@@ -93,6 +93,12 @@
   color: white;
 }
 
+/* Install button variant - green color */
+.btn--install {
+  background-color: #22c55e;
+  color: white;
+}
+
 /* Button variant hover states */
 .btn--success:hover:not(.btn--disabled) {
   background-color: var(--success-light);
@@ -133,6 +139,10 @@
 
 .btn--app:hover:not(.btn--disabled) {
   background-color: #e600dc;
+}
+
+.btn--install:hover:not(.btn--disabled) {
+  background-color: #16a34a;
 }
 
 .btn--disabled {

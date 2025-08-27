@@ -125,6 +125,14 @@ export class AppRow {
     });
     DOMUtils.addSafeEventListener(restartButton, 'click', () => this.handleRestart());
 
+    // Install button
+    const installButton = DOMUtils.createButton('Install', {
+      id: `install-button-${this.rowId}`,
+      variant: 'btn--install',
+      icon: DOMUtils.getButtonIcon('install')
+    });
+    DOMUtils.addSafeEventListener(installButton, 'click', () => this.handleInstall());
+
     // Close button
     const closeButton = DOMUtils.createElement('button', {
       className: 'btn btn--error btn--icon',
@@ -149,6 +157,7 @@ export class AppRow {
 
     actions.appendChild(runButton);
     actions.appendChild(restartButton);
+    actions.appendChild(installButton);
     
     controls.appendChild(actions);
     controls.appendChild(closeButton);
@@ -226,6 +235,39 @@ export class AppRow {
     );
   }
 
+  handleInstall() {
+    const appSelect = document.getElementById(`app-select-${this.rowId}`);
+    
+    if (!appSelect.value) {
+      alert('Please select an application');
+      return;
+    }
+
+    // Disable install button and remove focus
+    const installButton = document.getElementById(`install-button-${this.rowId}`);
+    installButton.classList.add('btn--disabled');
+    installButton.blur(); // Remove focus from the button
+
+    // Update status
+    this.updateStatus('installing', 'Installing');
+    
+    // Start individual timer for this operation
+    this.startIndividualTimer();
+    
+    // Update close button to handle process killing
+    this.setupProcessKillHandler();
+
+    // Start timing for this operation
+    const operationId = `install-${this.rowId}`;
+    this.timeTracker.startTimer(operationId, 'install');
+
+    this.processManager.install(
+      appSelect.value,
+      `app-progress-${this.rowId}`,
+      operationId // Pass operation ID for timer tracking
+    );
+  }
+
   handleClose() {
     const closeButton = document.getElementById(`app-close-button-${this.rowId}`);
     const pid = closeButton.dataset.pid;
@@ -278,6 +320,30 @@ export class AppRow {
     const restartButton = document.getElementById(`restart-button-${this.rowId}`);
     
     if (restartButton) restartButton.classList.remove('btn--disabled');
+  }
+
+  /**
+   * Handle install completion
+   */
+  onInstallComplete(data) {
+    // Re-enable install button
+    const installButton = document.getElementById(`install-button-${this.rowId}`);
+    if (installButton) {
+      installButton.classList.remove('btn--disabled');
+    }
+
+    // Update status to completed with date
+    const currentDate = new Date().toLocaleString();
+    
+    // Check if install was successful
+    if (data.includes('exit code: 0') || data.includes('Install completed with exit code: 0')) {
+      this.updateStatus('installed', `Install Done - ${currentDate}`);
+    } else {
+      this.updateStatus('error', `Install Failed - ${currentDate}`);
+    }
+    
+    // Stop individual timer
+    this.stopIndividualTimer();
   }
 
   /**

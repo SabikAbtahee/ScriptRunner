@@ -263,6 +263,43 @@ ipcMain.handle('copy', async (event, param) => {
   copyToDestination(event, param);
 });
 
+// Install dependencies
+ipcMain.handle('npm_install', async (event, param) => {
+  try {
+    const config = JSON.parse(param.path);
+    const directory = config.path;
+    
+    console.log(`Starting npm install in: ${directory}`);
+    
+    const command = spawn('npm', ['install'], { 
+      cwd: directory, 
+      shell: true 
+    });
+
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'install_output', data.toString(), param.progress, false);
+    });
+
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'install_output', data.toString(), param.progress, false);
+    });
+
+    command.on('close', (code) => {
+      console.log(`Install process exited with code: ${code}`);
+      sendOutput(event, 'install_output', `Install completed with exit code: ${code}`, param.progress, true);
+    });
+
+    command.on('error', (error) => {
+      console.error('Install process error:', error);
+      sendOutput(event, 'install_output', `Error: ${error.message}`, param.progress, true);
+    });
+
+  } catch (error) {
+    console.error('Failed to start install:', error);
+    sendOutput(event, 'install_output', `Failed to start install: ${error.message}`, param.progress, true);
+  }
+});
+
 // Kill process
 ipcMain.handle('kill', async (event, param) => {
   const pid = param.command;

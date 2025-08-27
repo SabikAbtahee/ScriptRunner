@@ -22,6 +22,7 @@ const API = {
   build_copy: (param) => ipcRenderer.invoke('build_copy', param),
   copy: (param) => ipcRenderer.invoke('copy', param),
   watch: (param) => ipcRenderer.invoke('watch', param),
+  npm_install: (param) => ipcRenderer.invoke('npm_install', param),
 
   // Application operations
   run_app: (param) => ipcRenderer.invoke('run_app', param),
@@ -69,6 +70,16 @@ const API = {
     
     // Return cleanup function
     return () => ipcRenderer.removeListener('app_output', handler);
+  },
+
+  install_output: (callback) => {
+    const handler = (event, data, progress, isDone) => {
+      callback(data, progress, isDone);
+    };
+    ipcRenderer.on('install_output', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('install_output', handler);
   }
 };
 
