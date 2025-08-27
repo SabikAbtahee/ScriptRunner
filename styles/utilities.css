@@ -1,0 +1,112 @@
+/* Utility classes */
+.u-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.u-hidden {
+  display: none !important;
+}
+
+.u-text-center {
+  text-align: center !important;
+}
+
+.u-text-left {
+  text-align: left !important;
+}
+
+.u-text-right {
+  text-align: right !important;
+}
+
+.u-mb-0 { margin-bottom: 0 !important; }
+.u-mb-sm { margin-bottom: var(--spacing-sm) !important; }
+.u-mb-md { margin-bottom: var(--spacing-md) !important; }
+.u-mb-lg { margin-bottom: var(--spacing-lg) !important; }
+
+.u-mt-0 { margin-top: 0 !important; }
+.u-mt-sm { margin-top: var(--spacing-sm) !important; }
+.u-mt-md { margin-top: var(--spacing-md) !important; }
+.u-mt-lg { margin-top: var(--spacing-lg) !important; }
+
+.u-p-0 { padding: 0 !important; }
+.u-p-sm { padding: var(--spacing-sm) !important; }
+.u-p-md { padding: var(--spacing-md) !important; }
+.u-p-lg { padding: var(--spacing-lg) !important; }
+
+.u-flex {
+  display: flex !important;
+}
+
+.u-flex-column {
+  flex-direction: column !important;
+}
+
+.u-flex-wrap {
+  flex-wrap: wrap !important;
+}
+
+.u-justify-center {
+  justify-content: center !important;
+}
+
+.u-justify-between {
+  justify-content: space-between !important;
+}
+
+.u-align-center {
+  align-items: center !important;
+}
+
+.u-gap-sm {
+  gap: var(--spacing-sm) !important;
+}
+
+.u-gap-md {
+  gap: var(--spacing-md) !important;
+}
+
+.u-gap-lg {
+  gap: var(--spacing-lg) !important;
+}
+
+.u-w-full {
+  width: 100% !important;
+}
+
+.u-h-full {
+  height: 100% !important;
+}
+
+/* Animation utilities */
+.u-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.u-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

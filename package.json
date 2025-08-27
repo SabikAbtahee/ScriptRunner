@@ -8,10 +8,13 @@
   "author": "sabik",
   "scripts": {
     "start": "electron-forge start",
+    "dev": "NODE_ENV=development electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "tailwind": "npx tailwindcss -i ./styles.css -o ./output.css --watch",
-    "build-mac": "electron-builder --mac"
+    "build-mac": "electron-builder --mac",
+    "lint": "echo 'Add linting here'",
+    "test": "echo 'Add tests here'"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",

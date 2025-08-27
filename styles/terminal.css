@@ -1,0 +1,103 @@
+/* Terminal and progress components */
+.terminal {
+  max-height: var(--max-terminal-height);
+  overflow: auto;
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  background-color: var(--terminal-bg);
+  color: var(--terminal-text);
+  border-radius: var(--border-radius);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terminal--hidden {
+  display: none;
+}
+
+.terminal--success {
+  background-color: var(--success-dark);
+  color: var(--success-light);
+  border-color: var(--success-color);
+}
+
+.terminal--error {
+  background-color: var(--error-dark);
+  color: var(--error-light);
+  border-color: var(--error-color);
+}
+
+.terminal--centered {
+  background-color: var(--surface-color);
+  color: var(--success-color);
+  text-align: center;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Progress indicator */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-sm) 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.progress__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.progress__text {
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Status indicators */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status--running {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--success-color);
+}
+
+.status--error {
+  background-color: rgba(255, 0, 0, 0.2);
+  color: var(--error-color);
+}
+
+.status--building {
+  background-color: rgba(243, 211, 29, 0.2);
+  color: var(--warning-color);
+}
+
+.status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}

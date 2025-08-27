@@ -1,0 +1,49 @@
+/* Form components */
+.form-select {
+  font-family: var(--font-family);
+  width: 100%;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  font-size: var(--font-size-base);
+  background-color: var(--surface-color);
+  color: var(--text-secondary);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polylyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-md) center;
+  background-size: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(76, 84, 175, 0.2);
+}
+
+.form-select:disabled {
+  background-color: #f5f5f5;
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.form-select option {
+  padding: var(--spacing-sm);
+}
+
+/* Select group */
+.select-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.select-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  font-size: 14px;
+}

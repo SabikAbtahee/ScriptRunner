@@ -1,0 +1,52 @@
+/* CSS Variables for consistent theming */
+:root {
+  /* Colors */
+  --primary-color: #4c54af;
+  --primary-hover: #83e787;
+  --success-color: #4caf50;
+  --success-dark: #0d4f2b;
+  --success-light: #4ade80;
+  --error-color: #ff0000;
+  --error-dark: #4c1d1d;
+  --error-light: #f87171;
+  --warning-color: #f3d31d;
+  --processing-color: #1df34b;
+  --background-color: #454545;
+  --surface-color: #f9f9f9;
+  --text-primary: #ffffff;
+  --text-secondary: #000000;
+  --border-color: #ccc;
+  --disabled-color: rgba(0, 0, 0, 0.12);
+  --disabled-text: rgba(0, 0, 0, 0.38);
+  --terminal-bg: #000000;
+  --terminal-text: #ffffff;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+
+  /* Typography */
+  --font-family: cursive;
+  --font-size-base: 16px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --letter-spacing: 0.5px;
+
+  /* Borders */
+  --border-radius: 4px;
+  --border-radius-large: 10px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  /* Transitions */
+  --transition-fast: 0.3s;
+  
+  /* Layout */
+  --max-terminal-height: 150px;
+  --scrollbar-width: 4px;
+}

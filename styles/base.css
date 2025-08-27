@@ -1,0 +1,32 @@
+/* Base styles and resets */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: var(--spacing-lg);
+  background-color: var(--background-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: var(--border-radius-large);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
