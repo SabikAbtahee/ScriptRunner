@@ -4,6 +4,7 @@ const { spawn } = require('node:child_process');
 const kill = require('tree-kill');
 const fs = require('fs');
 const os = require('os');
+const net = require('node:net');
 
 /**
  * Script Runner 2.0 - Main Process
@@ -160,6 +161,65 @@ function killAllRunningProcesses() {
   appState.runningApps.clear();
 }
 
+function processExists(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function waitForExit(pid, timeoutMs) {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const interval = setInterval(() => {
+      if (!processExists(pid) || Date.now() - start >= timeoutMs) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 200);
+  });
+}
+
+async function terminateProcessTree(pid, timeoutMs = 8000) {
+  await new Promise((resolve) => kill(pid, 'SIGTERM', () => resolve()));
+  await waitForExit(pid, Math.floor(timeoutMs * 0.6));
+  if (processExists(pid)) {
+    await new Promise((resolve) => kill(pid, 'SIGKILL', () => resolve()));
+    await waitForExit(pid, Math.floor(timeoutMs * 0.4));
+  }
+}
+
+function parsePortFromCommandString(cmd) {
+  if (!cmd) return null;
+  const m1 = cmd.match(/--port(?:=|\s+)(\d{2,5})/);
+  if (m1) return parseInt(m1[1], 10);
+  const m2 = cmd.match(/-p\s+(\d{2,5})/);
+  if (m2) return parseInt(m2[1], 10);
+  return null;
+}
+
+function waitForPortFree(port, timeoutMs = 8000) {
+  if (!port) return Promise.resolve();
+  const start = Date.now();
+  return new Promise((resolve) => {
+    const tryListen = () => {
+      const server = net.createServer();
+      server.once('error', () => {
+        server.close();
+        if (Date.now() - start >= timeoutMs) return resolve();
+        setTimeout(tryListen, 250);
+      });
+      server.once('listening', () => {
+        server.close(() => resolve());
+      });
+      server.listen(port, '127.0.0.1');
+    };
+    tryListen();
+  });
+}
+
 function parseCommand(command) {
   const parts = command.trim().split(' ');
   const baseCommand = parts[0];
@@ -297,6 +357,7 @@ ipcMain.handle('build_copy', async (event, param) => {
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    sendOutput(event, 'build_output', '$ npm run build', param.progress, false);
 
     command.stdout.on('data', (data) => {
       sendOutput(event, 'build_output', data.toString(), param.progress, false);
@@ -341,6 +402,7 @@ ipcMain.handle('watch', async (event, param) => {
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    sendOutput(event, 'watch_output', '$ npx ng build --watch', param.progress, param.rowCounter, null);
 
     command.stdout.on('data', (data) => {
       sendOutput(event, 'watch_output', data.toString(), param.progress, param.rowCounter, command.pid);
@@ -381,6 +443,7 @@ ipcMain.handle('npm_install', async (event, param) => {
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    sendOutput(event, 'install_output', '$ npm install', param.progress, false);
 
     command.stdout.on('data', (data) => {
       sendOutput(event, 'install_output', data.toString(), param.progress, false);
@@ -437,26 +500,21 @@ ipcMain.handle('run_app', async (event, param) => {
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
       console.log('Killing existing process:', existingPid);
-      
-      await new Promise((resolve) => {
-        kill(existingPid, 'SIGTERM', () => {
-          appState.removeRunningApp(directory);
-          resolve();
-        });
-      });
+      await terminateProcessTree(existingPid);
+      appState.removeRunningApp(directory);
     }
     
     // Parse the command and arguments
     const { baseCommand, args } = parseCommand(runCommand);
+    const port = parsePortFromCommandString(runCommand);
+    await waitForPortFree(port);
     
     const command = spawn(baseCommand, args, { 
       cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
-    
-    // Track this process
-    appState.addRunningApp(directory, command.pid);
+    sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
     
     command.stdout.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
@@ -501,26 +559,21 @@ ipcMain.handle('restart_app', async (event, param) => {
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
       console.log('Killing existing process for restart:', existingPid);
-      
-      await new Promise((resolve) => {
-        kill(existingPid, 'SIGTERM', (err) => {
-          if (err) {
-            console.error('Error killing existing process:', err);
-          }
-          appState.removeRunningApp(directory);
-          resolve();
-        });
-      });
+      await terminateProcessTree(existingPid);
+      appState.removeRunningApp(directory);
     }
     
     // Start new process
     const { baseCommand, args } = parseCommand(runCommand);
+    const port = parsePortFromCommandString(runCommand);
+    await waitForPortFree(port);
     
     const command = spawn(baseCommand, args, { 
       cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
     
     // Track this process
     appState.addRunningApp(directory, command.pid);
@@ -575,6 +628,7 @@ function copyToDestination(event, param) {
     const command = spawn(resolveCommand('npx'), ['cpx', sourcePattern, destinationPath], {
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    sendOutput(event, 'copy_output', `$ npx cpx ${sourcePattern} ${destinationPath}`, param.progress, false);
 
     command.stdout.on('data', (data) => {
       sendOutput(event, 'copy_output', data.toString(), param.progress, false);
