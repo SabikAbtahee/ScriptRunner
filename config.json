@@ -1,4 +1,9 @@
 {
+    "NodeTools": {
+  "node": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/node",
+  "npm": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/npm",
+  "npx": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/npx"
+},
     "Application": {
         "PMI_Framework_Admin": {
             "name": "Admin",

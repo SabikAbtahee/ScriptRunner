@@ -199,8 +199,25 @@ function getExtendedPath() {
     '/Users/' + os.userInfo().username + '/.npm-global/bin',
     process.cwd() + '/node_modules/.bin'
   ];
-  
-  const allPaths = [originalPath, ...commonPaths].filter(Boolean);
+  const home = os.homedir();
+  const nvmDir = process.env.NVM_DIR || path.join(home, '.nvm');
+  const nvmPaths = [];
+  if (fs.existsSync(nvmDir)) {
+    nvmPaths.push(path.join(nvmDir, 'bin'));
+    const versionsDir = path.join(nvmDir, 'versions', 'node');
+    if (fs.existsSync(versionsDir)) {
+      try {
+        const entries = fs.readdirSync(versionsDir, { withFileTypes: true });
+        entries.forEach((entry) => {
+          if (entry.isDirectory()) {
+            nvmPaths.push(path.join(versionsDir, entry.name, 'bin'));
+          }
+        });
+      } catch (_) {}
+    }
+  }
+  const voltaPath = path.join(home, '.volta', 'bin');
+  const allPaths = [originalPath, ...commonPaths, ...nvmPaths, voltaPath].filter(Boolean);
   return allPaths.join(':');
 }
 
@@ -209,7 +226,27 @@ function getExtendedPath() {
  */
 function resolveCommand(command) {
   const { execSync } = require('child_process');
-  
+  const getConfig = () => {
+    try {
+      const data = fs.readFileSync(appState.configPath, 'utf8');
+      return JSON.parse(data);
+    } catch (_) {
+      return {};
+    }
+  };
+  const getOverride = (tool) => {
+    try {
+      const cfg = getConfig();
+      const section = cfg.NodeTools || cfg.nodeTools || cfg.node || {};
+      const p = section[tool];
+      if (p && fs.existsSync(p)) return p;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  };
+  const override = ['node', 'npm', 'npx'].includes(command) ? getOverride(command) : null;
+  if (override) return override;
   try {
     // Try to find the command using which
     const result = execSync(`which ${command}`, { 
