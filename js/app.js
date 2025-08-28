@@ -194,6 +194,15 @@ class ScriptRunnerApp {
       // Success message
       this.showMessage(`Configuration loaded and saved: ${file.name}`, 'success');
       
+      // Show enhanced version information if available
+      if (window.configUtils) {
+        try {
+          await window.configUtils.showConfigLoaded('app_output', false, 0);
+        } catch (versionError) {
+          console.warn('Could not show version info:', versionError);
+        }
+      }
+      
       // Refresh all existing rows to use new config
       await this.refreshAllRows();
       console.log('All rows refreshed');

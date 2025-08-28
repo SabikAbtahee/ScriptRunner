@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version Display Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .output { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Version Display Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Configuration Manager UI</h3>
+        <button onclick="testConfigManager()">Test Config Manager</button>
+        <button onclick="testVersionInfo()">Test Version Info</button>
+        <button onclick="testSystemConfig()">Test System Config</button>
+        <div id="configOutput" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Enhanced Config Display</h3>
+        <button onclick="testEnhancedConfig()">Show Enhanced Config Message</button>
+        <button onclick="testDetailedConfig()">Show Detailed Config</button>
+        <button onclick="testValidation()">Test Validation</button>
+        <div id="enhancedOutput" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Direct API Calls</h3>
+        <button onclick="testDirectAPI()">Test Direct API</button>
+        <div id="apiOutput" class="output"></div>
+    </div>
+
+    <!-- Include the configuration manager scripts -->
+    <script src="config-manager-ui.js"></script>
+    <script src="config-button-integration.js"></script>
+
+    <script>
+        // Test functions
+        async function testConfigManager() {
+            const output = document.getElementById('configOutput');
+            output.textContent = 'Testing Config Manager...\n';
+            
+            try {
+                if (window.configManagerUI) {
+                    output.textContent += '✅ ConfigManagerUI loaded successfully\n';
+                    
+                    const configInfo = await window.configManagerUI.loadConfigInfo();
+                    output.textContent += `✅ Config info loaded: ${JSON.stringify(configInfo, null, 2)}\n`;
+                } else {
+                    output.textContent += '❌ ConfigManagerUI not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testVersionInfo() {
+            const output = document.getElementById('configOutput');
+            output.textContent = 'Testing Version Info...\n';
+            
+            try {
+                if (window.configUtils) {
+                    output.textContent += '✅ ConfigUtils loaded successfully\n';
+                    
+                    const versionInfo = await window.configUtils.getVersionInfo();
+                    output.textContent += `✅ Version info: ${JSON.stringify(versionInfo, null, 2)}\n`;
+                } else {
+                    output.textContent += '❌ ConfigUtils not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testSystemConfig() {
+            const output = document.getElementById('configOutput');
+            output.textContent = 'Testing System Config...\n';
+            
+            try {
+                if (window.configUtils) {
+                    output.textContent += '✅ ConfigUtils loaded successfully\n';
+                    
+                    const systemConfig = await window.configUtils.getSystemConfig();
+                    output.textContent += `✅ System config: ${JSON.stringify(systemConfig, null, 2)}\n`;
+                } else {
+                    output.textContent += '❌ ConfigUtils not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testEnhancedConfig() {
+            const output = document.getElementById('enhancedOutput');
+            output.textContent = 'Testing Enhanced Config Display...\n';
+            
+            try {
+                if (window.configUtils) {
+                    output.textContent += '✅ ConfigUtils loaded successfully\n';
+                    
+                    await window.configUtils.showConfigLoaded('app_output', false, 0);
+                    output.textContent += '✅ Enhanced config message displayed\n';
+                } else {
+                    output.textContent += '❌ ConfigUtils not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testDetailedConfig() {
+            const output = document.getElementById('enhancedOutput');
+            output.textContent = 'Testing Detailed Config...\n';
+            
+            try {
+                if (window.configUtils) {
+                    output.textContent += '✅ ConfigUtils loaded successfully\n';
+                    
+                    await window.configUtils.showDetailedConfig('app_output', false, 0);
+                    output.textContent += '✅ Detailed config displayed\n';
+                } else {
+                    output.textContent += '❌ ConfigUtils not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testValidation() {
+            const output = document.getElementById('enhancedOutput');
+            output.textContent = 'Testing Validation...\n';
+            
+            try {
+                if (window.configUtils) {
+                    output.textContent += '✅ ConfigUtils loaded successfully\n';
+                    
+                    await window.configUtils.showValidationResults('app_output', false, 0);
+                    output.textContent += '✅ Validation results displayed\n';
+                } else {
+                    output.textContent += '❌ ConfigUtils not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        async function testDirectAPI() {
+            const output = document.getElementById('apiOutput');
+            output.textContent = 'Testing Direct API Calls...\n';
+            
+            try {
+                if (window.API) {
+                    output.textContent += '✅ API loaded successfully\n';
+                    
+                    // Test get-config
+                    try {
+                        const config = await window.API.get_config();
+                        output.textContent += `✅ get_config: ${JSON.stringify(config, null, 2)}\n`;
+                    } catch (error) {
+                        output.textContent += `❌ get_config error: ${error.message}\n`;
+                    }
+                    
+                    // Test get-system-config
+                    try {
+                        const systemConfig = await window.API.get_system_config();
+                        output.textContent += `✅ get_system_config: ${JSON.stringify(systemConfig, null, 2)}\n`;
+                    } catch (error) {
+                        output.textContent += `❌ get_system_config error: ${error.message}\n`;
+                    }
+                    
+                    // Test get-version-info
+                    try {
+                        const versionInfo = await window.API.get_version_info();
+                        output.textContent += `✅ get_version_info: ${JSON.stringify(versionInfo, null, 2)}\n`;
+                    } catch (error) {
+                        output.textContent += `❌ get_version_info error: ${error.message}\n`;
+                    }
+                    
+                } else {
+                    output.textContent += '❌ API not found\n';
+                }
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n`;
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            console.log('Test page loaded');
+            console.log('ConfigManagerUI available:', !!window.configManagerUI);
+            console.log('ConfigUtils available:', !!window.configUtils);
+            console.log('API available:', !!window.API);
+        });
+    </script>
+</body>
+</html>

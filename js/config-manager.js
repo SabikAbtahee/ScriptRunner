@@ -104,11 +104,21 @@ export class ConfigManager {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const config = JSON.parse(event.target.result);
           if (this.validateConfig(config)) {
             this.setConfig(config);
+            
+            // Show enhanced configuration message with versions
+            if (window.configUtils) {
+              try {
+                await window.configUtils.showConfigLoaded('app_output', false, 0);
+              } catch (versionError) {
+                console.warn('Could not show version info:', versionError);
+              }
+            }
+            
             resolve(config);
           } else {
             reject(new Error('Invalid configuration format'));

@@ -17,6 +17,8 @@ if (!process.contextIsolated) {
 const API = {
   // Configuration
   get_config: () => ipcRenderer.invoke('get-config'),
+  get_system_config: () => ipcRenderer.invoke('get-system-config'),
+  get_version_info: () => ipcRenderer.invoke('get-version-info'),
 
   // Build operations
   build_copy: (param) => ipcRenderer.invoke('build_copy', param),
