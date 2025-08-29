@@ -82,6 +82,14 @@ class ScriptRunnerApp {
       });
     }
 
+    // Show versions button
+    const showVersionsButton = document.getElementById('showVersionsButton');
+    if (showVersionsButton) {
+      DOMUtils.addSafeEventListener(showVersionsButton, 'click', async () => {
+        await this.showNodeToolVersions();
+      });
+    }
+
     // Handle keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -97,6 +105,33 @@ class ScriptRunnerApp {
         }
       }
     });
+  }
+
+  async showNodeToolVersions() {
+    try {
+      const containerId = 'versions-panel';
+      let panel = document.getElementById(containerId);
+      if (!panel) {
+        panel = DOMUtils.createElement('pre', {
+          id: containerId,
+          className: 'terminal u-fade-in',
+          attributes: { style: 'margin: 12px 0;' }
+        });
+        this.container.prepend(panel);
+      }
+      panel.innerText = 'Collecting versions...\n';
+
+      const versions = await window.API.get_versions();
+      const lines = [
+        `node: ${versions.node}`,
+        `npm:  ${versions.npm}`,
+        `npx:  ${versions.npx}`
+      ];
+      panel.innerText = lines.join('\n') + '\n';
+    } catch (error) {
+      console.error('Failed to get versions:', error);
+      this.showError('Failed to fetch versions');
+    }
   }
 
   async createBuildRow() {

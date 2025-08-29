@@ -31,6 +31,9 @@ const API = {
   // Process management
   kill: (param) => ipcRenderer.invoke('kill', param),
 
+  // Tools / versions
+  get_versions: () => ipcRenderer.invoke('get-versions'),
+
   // Output listeners
   build_output: (callback) => {
     const handler = (event, data, progress, isDone) => {

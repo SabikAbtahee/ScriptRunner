@@ -430,6 +430,42 @@ ipcMain.handle('copy', async (event, param) => {
   copyToDestination(event, param);
 });
 
+// Get Node.js tool versions (node, npm, npx)
+ipcMain.handle('get-versions', async () => {
+  const runVersion = (tool) => new Promise((resolve) => {
+    try {
+      const command = spawn(resolveCommand(tool), ['-v'], {
+        shell: true,
+        env: { ...process.env, PATH: getExtendedPath() }
+      });
+      let stdout = '';
+      let stderr = '';
+      command.stdout.on('data', (d) => { stdout += d.toString(); });
+      command.stderr.on('data', (d) => { stderr += d.toString(); });
+      command.on('close', (code) => {
+        if (code === 0 && stdout.trim()) {
+          resolve(stdout.trim());
+        } else {
+          resolve((stderr || `exit ${code}`).toString().trim());
+        }
+      });
+      command.on('error', (err) => {
+        resolve(`error: ${err.message}`);
+      });
+    } catch (err) {
+      resolve(`error: ${err.message}`);
+    }
+  });
+
+  const [nodeV, npmV, npxV] = await Promise.all([
+    runVersion('node'),
+    runVersion('npm'),
+    runVersion('npx')
+  ]);
+
+  return { node: nodeV, npm: npmV, npx: npxV };
+});
+
 // Install dependencies
 ipcMain.handle('npm_install', async (event, param) => {
   try {
