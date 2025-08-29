@@ -82,7 +82,7 @@ function createWindow() {
 app.whenReady().then(() => {
   checkInitialConfig();
   createWindow();
-  
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -93,7 +93,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   // Kill all running processes before closing
   killAllRunningProcesses();
-  
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -183,12 +183,40 @@ function waitForExit(pid, timeoutMs) {
 }
 
 async function terminateProcessTree(pid, timeoutMs = 8000) {
-  await new Promise((resolve) => kill(pid, 'SIGTERM', () => resolve()));
+  console.log(`Terminating process tree for PID: ${pid}`);
+
+  // First try SIGTERM to gracefully kill the entire process tree
+  await new Promise((resolve) => {
+    kill(pid, 'SIGTERM', (err) => {
+      if (err) {
+        console.log(`SIGTERM error for PID ${pid}:`, err.message);
+      } else {
+        console.log(`SIGTERM sent to process tree for PID: ${pid}`);
+      }
+      resolve();
+    });
+  });
+
+  // Wait for graceful shutdown
   await waitForExit(pid, Math.floor(timeoutMs * 0.6));
+
+  // If process still exists, force kill the entire tree
   if (processExists(pid)) {
-    await new Promise((resolve) => kill(pid, 'SIGKILL', () => resolve()));
+    console.log(`Process ${pid} still exists, sending SIGKILL to tree`);
+    await new Promise((resolve) => {
+      kill(pid, 'SIGKILL', (err) => {
+        if (err) {
+          console.log(`SIGKILL error for PID ${pid}:`, err.message);
+        } else {
+          console.log(`SIGKILL sent to process tree for PID: ${pid}`);
+        }
+        resolve();
+      });
+    });
     await waitForExit(pid, Math.floor(timeoutMs * 0.4));
   }
+
+  console.log(`Process tree termination completed for PID: ${pid}`);
 }
 
 function parsePortFromCommandString(cmd) {
@@ -224,7 +252,7 @@ function parseCommand(command) {
   const parts = command.trim().split(' ');
   const baseCommand = parts[0];
   const args = parts.slice(1);
-  
+
   // For Angular CLI commands, use npx for better reliability in packaged apps
   if (baseCommand === 'ng') {
     return {
@@ -232,7 +260,7 @@ function parseCommand(command) {
       args: ['ng', ...args]
     };
   }
-  
+
   // For npm commands, try to resolve the full path
   if (baseCommand === 'npm') {
     return {
@@ -240,7 +268,7 @@ function parseCommand(command) {
       args
     };
   }
-  
+
   // For other commands, try to resolve
   return {
     baseCommand: resolveCommand(baseCommand),
@@ -273,7 +301,7 @@ function getExtendedPath() {
             nvmPaths.push(path.join(versionsDir, entry.name, 'bin'));
           }
         });
-      } catch (_) {}
+      } catch (_) { }
     }
   }
   const voltaPath = path.join(home, '.volta', 'bin');
@@ -309,7 +337,7 @@ function resolveCommand(command) {
   if (override) return override;
   try {
     // Try to find the command using which
-    const result = execSync(`which ${command}`, { 
+    const result = execSync(`which ${command}`, {
       encoding: 'utf8',
       env: { ...process.env, PATH: getExtendedPath() }
     }).trim();
@@ -349,11 +377,11 @@ ipcMain.handle('build_copy', async (event, param) => {
   try {
     const config = JSON.parse(param.source);
     const directory = config.path;
-    
+
     console.log(`Starting build in: ${directory}`);
-    
-    const command = spawn(resolveCommand('npm'), ['run', 'build'], { 
-      cwd: directory, 
+
+    const command = spawn(resolveCommand('npm'), ['run', 'build'], {
+      cwd: directory,
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -370,7 +398,7 @@ ipcMain.handle('build_copy', async (event, param) => {
     command.on('close', (code) => {
       console.log(`Build process exited with code: ${code}`);
       sendOutput(event, 'build_output', code.toString(), param.progress, true);
-      
+
       if (code === 0) {
         copyToDestination(event, param);
       } else {
@@ -394,11 +422,11 @@ ipcMain.handle('watch', async (event, param) => {
   try {
     const config = JSON.parse(param.source);
     const directory = config.path;
-    
+
     console.log(`Starting watch in: ${directory}`);
-    
-    const command = spawn(resolveCommand('npx'), ['ng', 'build', '--watch'], { 
-      cwd: directory, 
+
+    const command = spawn(resolveCommand('npx'), ['ng', 'build', '--watch'], {
+      cwd: directory,
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -471,11 +499,11 @@ ipcMain.handle('npm_install', async (event, param) => {
   try {
     const config = JSON.parse(param.path);
     const directory = config.path;
-    
+
     console.log(`Starting npm install in: ${directory}`);
-    
-    const command = spawn(resolveCommand('npm'), ['install'], { 
-      cwd: directory, 
+
+    const command = spawn(resolveCommand('npm'), ['install'], {
+      cwd: directory,
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -508,7 +536,7 @@ ipcMain.handle('npm_install', async (event, param) => {
 // Kill process
 ipcMain.handle('kill', async (event, param) => {
   const pid = param.command;
-  
+
   return new Promise((resolve) => {
     kill(pid, 'SIGKILL', (err) => {
       if (err) {
@@ -528,44 +556,49 @@ ipcMain.handle('run_app', async (event, param) => {
     const appConfig = JSON.parse(param.path);
     const directory = appConfig.path;
     const runCommand = appConfig.runCommand || 'npm run start';
-    
+
     console.log('Starting app in directory:', directory);
     console.log('Using run command:', runCommand);
-    
+
     // Kill existing process if running
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
-      console.log('Killing existing process:', existingPid);
+      console.log(`Killing existing process tree for directory ${directory}, PID: ${existingPid}`);
       await terminateProcessTree(existingPid);
       appState.removeRunningApp(directory);
+      console.log(`Removed PID ${existingPid} from tracking after termination`);
     }
-    
+
+
     // Parse the command and arguments
     const { baseCommand, args } = parseCommand(runCommand);
     const port = parsePortFromCommandString(runCommand);
     await waitForPortFree(port);
-    
-    const command = spawn(baseCommand, args, { 
-      cwd: directory, 
+
+    const command = spawn(baseCommand, args, {
+      cwd: directory,
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
+    console.log(`Adding process to tracking - Directory: ${directory}, PID: ${command.pid}`);
+    appState.addRunningApp(directory, command.pid);
     sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
-    
+
     command.stdout.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-    
+
     command.stderr.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-    
+
     command.on('close', (code) => {
-      console.log('App process exited with code:', code);
+      console.log(`App process exited with code: ${code}, removing PID ${command.pid} from tracking`);
       appState.removeRunningApp(directory);
     });
-    
+
     command.on('exit', (code) => {
+      console.log(`App process exit event with code: ${code}, removing PID ${command.pid} from tracking`);
       appState.removeRunningApp(directory);
     });
 
@@ -587,47 +620,49 @@ ipcMain.handle('restart_app', async (event, param) => {
     const appConfig = JSON.parse(param.path);
     const directory = appConfig.path;
     const runCommand = appConfig.runCommand || 'npm run start';
-    
+
     console.log('Restarting app in directory:', directory);
     console.log('Using run command:', runCommand);
-    
+
     // Kill existing process first
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
-      console.log('Killing existing process for restart:', existingPid);
+      console.log(`Killing existing process tree for restart in directory ${directory}, PID: ${existingPid}`);
       await terminateProcessTree(existingPid);
       appState.removeRunningApp(directory);
+      console.log(`Removed PID ${existingPid} from tracking after restart termination`);
     }
-    
+
     // Start new process
     const { baseCommand, args } = parseCommand(runCommand);
     const port = parsePortFromCommandString(runCommand);
     await waitForPortFree(port);
-    
-    const command = spawn(baseCommand, args, { 
-      cwd: directory, 
+
+    const command = spawn(baseCommand, args, {
+      cwd: directory,
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
     sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
-    
+
     // Track this process
     appState.addRunningApp(directory, command.pid);
-    
+
     command.stdout.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-    
+
     command.stderr.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-    
+
     command.on('close', (code) => {
-      console.log('Restart app process exited with code:', code);
+      console.log(`Restart app process exited with code: ${code}, removing PID ${command.pid} from tracking`);
       appState.removeRunningApp(directory);
     });
-    
+
     command.on('exit', (code) => {
+      console.log(`Restart app process exit event with code: ${code}, removing PID ${command.pid} from tracking`);
       appState.removeRunningApp(directory);
     });
 
@@ -650,7 +685,7 @@ function copyToDestination(event, param) {
   try {
     const sourceConfig = JSON.parse(param.source);
     const destConfig = JSON.parse(param.destination);
-    
+
     const sourceDirectory = sourceConfig.path;
     const sourceLibDirectory = sourceConfig.node_path;
     const destinationDirectory = destConfig.path;
@@ -677,7 +712,7 @@ function copyToDestination(event, param) {
     command.on('close', (code) => {
       const commandString = `cpx "${sourcePattern}" "${destinationPath}"`;
       sendOutput(event, 'copy_output', commandString, param.progress, false);
-      
+
       if (code !== 0) {
         console.error(`Copy failed with exit code: ${code}`);
         sendOutput(event, 'copy_output', `Copy failed with exit code: ${code}`, param.progress, true);
