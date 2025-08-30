@@ -420,7 +420,8 @@ export class ProcessManager {
       'webpack compiled successfully',
       'Build completed successfully',
       'Compilation complete',
-      '✓ Compiled'
+      '✓ Compiled',
+      'Application bundle generation complete.'
     ];
     
     // Also check for patterns that indicate compilation is done with warnings

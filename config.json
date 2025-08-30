@@ -13,7 +13,7 @@
         "pmi_framework_kpidashboard": {
             "name": "KPIDashboard",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard",
-            "runCommand": "npm run start"
+            "runCommand": "npm run start:esbuild"
         },
         "PMI_Framework_AiAssistant": {
             "name": "AiAssistant",
