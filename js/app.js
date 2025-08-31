@@ -1,5 +1,6 @@
 import { BuildRow } from './build-row.js';
 import { AppRow } from './app-row.js';
+import { LinkerRow } from './linker-row.js';
 import { ProcessManager } from './process-manager.js';
 import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
@@ -17,6 +18,7 @@ class ScriptRunnerApp {
     this.container = null;
     this.buildRows = new Map(); // Track build row instances
     this.appRows = new Map(); // Track app row instances
+    this.linkerRows = new Map(); // Track linker row instances
     
     this.init();
   }
@@ -82,6 +84,14 @@ class ScriptRunnerApp {
       });
     }
 
+    // Add linker row button
+    const addLinkerRowButton = document.getElementById('addLinkerRowButton');
+    if (addLinkerRowButton) {
+      DOMUtils.addSafeEventListener(addLinkerRowButton, 'click', () => {
+        this.createLinkerRow();
+      });
+    }
+
     // Show versions button
     const showVersionsButton = document.getElementById('showVersionsButton');
     if (showVersionsButton) {
@@ -101,6 +111,10 @@ class ScriptRunnerApp {
           case 'a':
             e.preventDefault();
             this.createAppRow();
+            break;
+          case 'l':
+            e.preventDefault();
+            this.createLinkerRow();
             break;
         }
       }
@@ -177,6 +191,29 @@ class ScriptRunnerApp {
     } catch (error) {
       console.error('Failed to create app row:', error);
       this.showError('Failed to create app row');
+    }
+  }
+
+  async createLinkerRow() {
+    try {
+      this.rowCounter++;
+      const linkerRow = new LinkerRow(
+        this.container, 
+        this.processManager, 
+        this.timeTracker,
+        this.rowCounter,
+        (rowId, type) => this.handleRowRemoval(rowId, type)
+      );
+      await linkerRow.create();
+      
+      // Store reference to the row instance
+      this.linkerRows.set(this.rowCounter, linkerRow);
+      
+      // Scroll to new row
+      linkerRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+      console.error('Failed to create linker row:', error);
+      this.showError('Failed to create linker row');
     }
   }
 
@@ -286,6 +323,15 @@ class ScriptRunnerApp {
         console.error(`Failed to refresh app row ${rowId}:`, error);
       }
     }
+
+    // Refresh all linker rows using stored instances
+    for (const [rowId, linkerRow] of this.linkerRows) {
+      try {
+        await linkerRow.refreshSelectors();
+      } catch (error) {
+        console.error(`Failed to refresh linker row ${rowId}:`, error);
+      }
+    }
   }
 
   checkSavedConfig() {
@@ -301,6 +347,8 @@ class ScriptRunnerApp {
       this.buildRows.delete(rowId);
     } else if (type === 'app') {
       this.appRows.delete(rowId);
+    } else if (type === 'linker') {
+      this.linkerRows.delete(rowId);
     }
   }
 }
