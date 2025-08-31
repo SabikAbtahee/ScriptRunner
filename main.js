@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const kill = require('tree-kill');
@@ -71,6 +71,9 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
   }
+  
+  // TEMPORARY: Force DevTools for debugging (remove when done)
+  mainWindow.webContents.openDevTools();
 
   return mainWindow;
 }
@@ -679,6 +682,160 @@ ipcMain.handle('run_app', async (event, param) => {
   } catch (error) {
     console.error('Run app error:', error);
     sendOutput(event, 'app_output', `Error: ${error.message}`, param.progress, param.rowCounter, null);
+  }
+});
+
+// NPM Link operations
+ipcMain.handle('npm_link_library', async (event, param) => {
+  try {
+    const { linkPath, libName, progressId } = param;
+    
+    console.log(`Starting npm link in: ${linkPath} for library: ${libName}`);
+    
+    const command = spawn(resolveCommand('npm'), ['link'], {
+      cwd: linkPath,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    
+    sendOutput(event, 'link_output', `$ npm link (in ${linkPath})`, progressId, false);
+    
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'link_output', data.toString(), progressId, false);
+    });
+    
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'link_output', data.toString(), progressId, false);
+    });
+    
+    command.on('close', (code) => {
+      console.log(`npm link process exited with code: ${code} for ${libName}`);
+      sendOutput(event, 'link_output', `npm link completed for ${libName} with exit code: ${code}`, progressId, true, code);
+    });
+    
+    command.on('error', (error) => {
+      console.error('npm link process error:', error);
+      sendOutput(event, 'link_output', `Error: ${error.message}`, progressId, true, -1);
+    });
+    
+  } catch (error) {
+    console.error('Failed to start npm link:', error);
+    sendOutput(event, 'link_output', `Failed to start npm link: ${error.message}`, param.progressId, true, -1);
+  }
+});
+
+ipcMain.handle('npm_link_destination', async (event, param) => {
+  try {
+    const { linkPath, libNames, progressId } = param;
+    
+    console.log(`Starting npm link in destination: ${linkPath} for libraries: ${libNames.join(', ')}`);
+    
+    const command = spawn(resolveCommand('npm'), ['link', ...libNames], {
+      cwd: linkPath,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    
+    sendOutput(event, 'link_output', `$ npm link ${libNames.join(' ')} (in ${linkPath})`, progressId, false);
+    
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'link_output', data.toString(), progressId, false);
+    });
+    
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'link_output', data.toString(), progressId, false);
+    });
+    
+    command.on('close', (code) => {
+      console.log(`npm link destination process exited with code: ${code}`);
+      sendOutput(event, 'link_output', `npm link destination completed with exit code: ${code}`, progressId, true, code);
+    });
+    
+    command.on('error', (error) => {
+      console.error('npm link destination process error:', error);
+      sendOutput(event, 'link_output', `Error: ${error.message}`, progressId, true, -1);
+    });
+    
+  } catch (error) {
+    console.error('Failed to start npm link destination:', error);
+    sendOutput(event, 'link_output', `Failed to start npm link destination: ${error.message}`, param.progressId, true, -1);
+  }
+});
+
+// NPM Unlink operations
+ipcMain.handle('npm_unlink_destination', async (event, param) => {
+  try {
+    const { linkPath, libNames, progressId } = param;
+    
+    console.log(`Starting npm unlink in destination: ${linkPath} for libraries: ${libNames.join(', ')}`);
+    
+    const command = spawn(resolveCommand('npm'), ['unlink', ...libNames], {
+      cwd: linkPath,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    
+    sendOutput(event, 'unlink_output', `$ npm unlink ${libNames.join(' ')} (in ${linkPath})`, progressId, false);
+    
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
+    });
+    
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
+    });
+    
+    command.on('close', (code) => {
+      console.log(`npm unlink destination process exited with code: ${code}`);
+      sendOutput(event, 'unlink_output', `npm unlink destination completed with exit code: ${code}`, progressId, true, code);
+    });
+    
+    command.on('error', (error) => {
+      console.error('npm unlink destination process error:', error);
+      sendOutput(event, 'unlink_output', `Error: ${error.message}`, progressId, true, -1);
+    });
+    
+  } catch (error) {
+    console.error('Failed to start npm unlink destination:', error);
+    sendOutput(event, 'unlink_output', `Failed to start npm unlink destination: ${error.message}`, param.progressId, true, -1);
+  }
+});
+
+ipcMain.handle('npm_unlink_library', async (event, param) => {
+  try {
+    const { linkPath, libName, progressId } = param;
+    
+    console.log(`Starting npm unlink -g in: ${linkPath} for library: ${libName}`);
+    
+    const command = spawn(resolveCommand('npm'), ['unlink', '-g', libName], {
+      cwd: linkPath,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    
+    sendOutput(event, 'unlink_output', `$ npm unlink -g ${libName} (in ${linkPath})`, progressId, false);
+    
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
+    });
+    
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
+    });
+    
+    command.on('close', (code) => {
+      console.log(`npm unlink -g process exited with code: ${code} for ${libName}`);
+      sendOutput(event, 'unlink_output', `npm unlink -g completed for ${libName} with exit code: ${code}`, progressId, true, code);
+    });
+    
+    command.on('error', (error) => {
+      console.error('npm unlink -g process error:', error);
+      sendOutput(event, 'unlink_output', `Error: ${error.message}`, progressId, true, -1);
+    });
+    
+  } catch (error) {
+    console.error('Failed to start npm unlink -g:', error);
+    sendOutput(event, 'unlink_output', `Failed to start npm unlink -g: ${error.message}`, param.progressId, true, -1);
   }
 });
 

@@ -129,6 +129,127 @@ export class DOMUtils {
   }
 
   /**
+   * Create a multiselect dropdown
+   */
+  static createMultiSelect(options = {}) {
+    const container = this.createElement('div', {
+      className: 'multiselect-container',
+      id: options.id
+    });
+
+    // Create the display area that shows selected items
+    const display = this.createElement('div', {
+      className: 'multiselect-display',
+      textContent: options.placeholder || 'Select libraries...'
+    });
+
+    // Create the dropdown list (initially hidden)
+    const dropdown = this.createElement('div', {
+      className: 'multiselect-dropdown u-hidden'
+    });
+
+    // Track selected values
+    const selectedValues = new Set();
+    const selectedItems = new Map(); // value -> {name, data}
+
+    // Update display text based on selections
+    const updateDisplay = () => {
+      if (selectedValues.size === 0) {
+        display.textContent = options.placeholder || 'Select libraries...';
+        display.classList.remove('has-selections');
+      } else {
+        const names = Array.from(selectedItems.values()).map(item => item.name);
+        display.textContent = names.join(', ');
+        display.classList.add('has-selections');
+      }
+    };
+
+    // Toggle dropdown visibility
+    const toggleDropdown = () => {
+      dropdown.classList.toggle('u-hidden');
+    };
+
+    // Close dropdown when clicking outside
+    const closeDropdown = (e) => {
+      if (!container.contains(e.target)) {
+        dropdown.classList.add('u-hidden');
+      }
+    };
+
+    // Add click listener to display
+    this.addSafeEventListener(display, 'click', toggleDropdown);
+
+    // Add global click listener to close dropdown
+    document.addEventListener('click', closeDropdown);
+
+    // Store cleanup function
+    container._cleanup = () => {
+      document.removeEventListener('click', closeDropdown);
+    };
+
+    // Add methods to the container
+    container.addOption = (value, text, data = null) => {
+      const option = this.createElement('div', {
+        className: 'multiselect-option',
+        innerHTML: `
+          <input type="checkbox" class="multiselect-checkbox" value="${value}">
+          <span class="multiselect-label">${text}</span>
+        `
+      });
+
+      const checkbox = option.querySelector('.multiselect-checkbox');
+      
+      this.addSafeEventListener(checkbox, 'change', (e) => {
+        e.stopPropagation();
+        
+        if (checkbox.checked) {
+          selectedValues.add(value);
+          selectedItems.set(value, { name: text, data: data });
+        } else {
+          selectedValues.delete(value);
+          selectedItems.delete(value);
+        }
+        
+        updateDisplay();
+        
+        // Trigger custom change event
+        const changeEvent = new CustomEvent('multiselect-change', {
+          detail: {
+            selectedValues: Array.from(selectedValues),
+            selectedItems: Array.from(selectedItems.entries()).map(([value, item]) => ({
+              value,
+              name: item.name,
+              data: item.data
+            }))
+          }
+        });
+        container.dispatchEvent(changeEvent);
+      });
+
+      dropdown.appendChild(option);
+    };
+
+    container.getSelectedValues = () => Array.from(selectedValues);
+    container.getSelectedItems = () => Array.from(selectedItems.entries()).map(([value, item]) => ({
+      value,
+      name: item.name,
+      data: item.data
+    }));
+
+    container.clearSelections = () => {
+      selectedValues.clear();
+      selectedItems.clear();
+      dropdown.querySelectorAll('.multiselect-checkbox').forEach(cb => cb.checked = false);
+      updateDisplay();
+    };
+
+    container.appendChild(display);
+    container.appendChild(dropdown);
+
+    return container;
+  }
+
+  /**
    * Add event listener with error handling
    */
   static addSafeEventListener(element, event, handler) {

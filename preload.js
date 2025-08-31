@@ -28,6 +28,14 @@ const API = {
   run_app: (param) => ipcRenderer.invoke('run_app', param),
   restart_app: (param) => ipcRenderer.invoke('restart_app', param),
 
+  // NPM Link operations
+  npm_link_library: (param) => ipcRenderer.invoke('npm_link_library', param),
+  npm_link_destination: (param) => ipcRenderer.invoke('npm_link_destination', param),
+
+  // NPM Unlink operations
+  npm_unlink_destination: (param) => ipcRenderer.invoke('npm_unlink_destination', param),
+  npm_unlink_library: (param) => ipcRenderer.invoke('npm_unlink_library', param),
+
   // Process management
   kill: (param) => ipcRenderer.invoke('kill', param),
 
@@ -80,6 +88,26 @@ const API = {
     
     // Return cleanup function
     return () => ipcRenderer.removeListener('install_output', handler);
+  },
+
+  link_output: (callback) => {
+    const handler = (event, data, progress, isDone, exitCode) => {
+      callback(data, progress, isDone, exitCode);
+    };
+    ipcRenderer.on('link_output', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('link_output', handler);
+  },
+
+  unlink_output: (callback) => {
+    const handler = (event, data, progress, isDone, exitCode) => {
+      callback(data, progress, isDone, exitCode);
+    };
+    ipcRenderer.on('unlink_output', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('unlink_output', handler);
   }
 };
 

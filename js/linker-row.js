@@ -99,26 +99,29 @@ export class LinkerRow {
   }
 
   createLibrarySelect(config) {
-    const select = DOMUtils.createSelect({
-      placeholder: 'Select a library',
+    const multiselect = DOMUtils.createMultiSelect({
+      placeholder: 'Select libraries...',
       id: `linker-source-select-${this.rowId}`
     });
 
     Object.keys(config.Library || {}).forEach(key => {
       const library = config.Library[key];
-      const option = DOMUtils.createElement('option', {
-        textContent: library.name,
-        attributes: {
-          value: JSON.stringify({
-            path: library.path,
-            node_path: library.libPath
-          })
-        }
+      const value = JSON.stringify({
+        path: library.path,
+        node_path: library.libPath,
+        linkPath: library.linkPath,
+        libName: library.libName
       });
-      select.appendChild(option);
+      
+      multiselect.addOption(value, library.name, {
+        path: library.path,
+        node_path: library.libPath,
+        linkPath: library.linkPath,
+        libName: library.libName
+      });
     });
 
-    return select;
+    return multiselect;
   }
 
   createDestinationSelect(config) {
@@ -135,7 +138,8 @@ export class LinkerRow {
         attributes: {
           value: JSON.stringify({
             path: app.path,
-            runCommand: app.runCommand
+            runCommand: app.runCommand,
+            linkPath: app.linkPath
           })
         }
       });
@@ -149,7 +153,8 @@ export class LinkerRow {
         textContent: library.name,
         attributes: {
           value: JSON.stringify({
-            path: library.path
+            path: library.path,
+            linkPath: library.linkPath
           })
         }
       });
@@ -225,10 +230,10 @@ export class LinkerRow {
   }
 
   handleLink() {
-    const sourceSelect = document.getElementById(`linker-source-select-${this.rowId}`);
+    const sourceMultiselect = document.getElementById(`linker-source-select-${this.rowId}`);
     const destSelect = document.getElementById(`linker-dest-select-${this.rowId}`);
     
-    if (!this.validateSelections(sourceSelect, destSelect)) return;
+    if (!this.validateSelections(sourceMultiselect, destSelect)) return;
 
     const linkButton = document.getElementById(`link-button-${this.rowId}`);
     linkButton.classList.add('btn--disabled');
@@ -244,28 +249,39 @@ export class LinkerRow {
     const operationId = `link-${this.rowId}`;
     this.timeTracker.startTimer(operationId, 'link');
 
-    // For now, just show a placeholder message
-    // This will be implemented based on what linking should actually do
-    setTimeout(() => {
-      this.setLinkCompleteStatus(true);
-      linkButton.classList.remove('btn--disabled');
-      
-      // Show success message in terminal
-      const terminal = document.getElementById(`linker-progress-${this.rowId}`);
-      if (terminal) {
-        terminal.classList.remove('u-hidden');
-        terminal.textContent = `Link operation completed successfully!\nSource: ${JSON.parse(sourceSelect.value).path}\nDestination: ${JSON.parse(destSelect.value).path}`;
-      }
-      
-      this.timeTracker.stopTimer(operationId);
-    }, 2000); // Simulate 2 second operation
+    // Get selected libraries and destination
+    const selectedLibraries = sourceMultiselect.getSelectedItems();
+    const destination = JSON.parse(destSelect.value);
+
+    // Prepare libraries data for linking
+    const libraries = selectedLibraries.map(item => {
+      const data = JSON.parse(item.value);
+      return {
+        linkPath: data.linkPath,
+        libName: data.libName,
+        name: item.name
+      };
+    });
+
+    // Prepare destination data
+    const destinationData = {
+      linkPath: destination.linkPath
+    };
+
+    // Start the npm link process
+    this.processManager.linkLibraries(
+      libraries,
+      destinationData,
+      `linker-progress-${this.rowId}`,
+      operationId
+    );
   }
 
   handleUnlink() {
-    const sourceSelect = document.getElementById(`linker-source-select-${this.rowId}`);
+    const sourceMultiselect = document.getElementById(`linker-source-select-${this.rowId}`);
     const destSelect = document.getElementById(`linker-dest-select-${this.rowId}`);
     
-    if (!this.validateSelections(sourceSelect, destSelect)) return;
+    if (!this.validateSelections(sourceMultiselect, destSelect)) return;
 
     const unlinkButton = document.getElementById(`unlink-button-${this.rowId}`);
     unlinkButton.classList.add('btn--disabled');
@@ -281,30 +297,42 @@ export class LinkerRow {
     const operationId = `unlink-${this.rowId}`;
     this.timeTracker.startTimer(operationId, 'unlink');
 
-    // For now, just show a placeholder message
-    // This will be implemented based on what unlinking should actually do
-    setTimeout(() => {
-      this.setUnlinkCompleteStatus(true);
-      unlinkButton.classList.remove('btn--disabled');
-      
-      // Show success message in terminal
-      const terminal = document.getElementById(`linker-progress-${this.rowId}`);
-      if (terminal) {
-        terminal.classList.remove('u-hidden');
-        terminal.textContent = `Unlink operation completed successfully!\nSource: ${JSON.parse(sourceSelect.value).path}\nDestination: ${JSON.parse(destSelect.value).path}`;
-      }
-      
-      this.timeTracker.stopTimer(operationId);
-    }, 1500); // Simulate 1.5 second operation
+    // Get selected libraries and destination
+    const selectedLibraries = sourceMultiselect.getSelectedItems();
+    const destination = JSON.parse(destSelect.value);
+
+    // Prepare libraries data for unlinking
+    const libraries = selectedLibraries.map(item => {
+      const data = JSON.parse(item.value);
+      return {
+        linkPath: data.linkPath,
+        libName: data.libName,
+        name: item.name
+      };
+    });
+
+    // Prepare destination data
+    const destinationData = {
+      linkPath: destination.linkPath
+    };
+
+    // Start the npm unlink process
+    this.processManager.unlinkLibraries(
+      libraries,
+      destinationData,
+      `linker-progress-${this.rowId}`,
+      operationId
+    );
   }
 
   handleClose() {
     this.remove();
   }
 
-  validateSelections(sourceSelect, destSelect) {
-    if (!sourceSelect.value || !destSelect.value) {
-      alert('Please select both source library and destination');
+  validateSelections(sourceMultiselect, destSelect) {
+    const selectedLibraries = sourceMultiselect.getSelectedValues();
+    if (selectedLibraries.length === 0 || !destSelect.value) {
+      alert('Please select at least one library and a destination');
       return false;
     }
     return true;
@@ -316,11 +344,11 @@ export class LinkerRow {
       const config = await ConfigManager.getConfig();
       console.log('Config for refresh:', config);
       
-      // Refresh source selector (libraries)
-      const sourceSelect = document.getElementById(`linker-source-select-${this.rowId}`);
-      if (sourceSelect) {
-        console.log('Refreshing linker source selector');
-        this.populateLibrarySelect(sourceSelect, config);
+      // Refresh source multiselect (libraries)
+      const sourceMultiselect = document.getElementById(`linker-source-select-${this.rowId}`);
+      if (sourceMultiselect) {
+        console.log('Refreshing linker source multiselect');
+        this.populateLibraryMultiselect(sourceMultiselect, config);
       }
       
       // Refresh destination selector (libraries + applications)
@@ -334,23 +362,32 @@ export class LinkerRow {
     }
   }
 
-  populateLibrarySelect(select, config) {
-    // Clear existing options except placeholder
-    select.innerHTML = '<option value="" disabled selected>Select a library</option>';
+  populateLibraryMultiselect(multiselect, config) {
+    // Clear existing selections and options
+    multiselect.clearSelections();
+    
+    // Clear dropdown options
+    const dropdown = multiselect.querySelector('.multiselect-dropdown');
+    if (dropdown) {
+      dropdown.innerHTML = '';
+    }
     
     // Add library options
     Object.keys(config.Library || {}).forEach(key => {
       const library = config.Library[key];
-      const option = DOMUtils.createElement('option', {
-        textContent: library.name,
-        attributes: {
-          value: JSON.stringify({
-            path: library.path,
-            node_path: library.libPath
-          })
-        }
+      const value = JSON.stringify({
+        path: library.path,
+        node_path: library.libPath,
+        linkPath: library.linkPath,
+        libName: library.libName
       });
-      select.appendChild(option);
+      
+      multiselect.addOption(value, library.name, {
+        path: library.path,
+        node_path: library.libPath,
+        linkPath: library.linkPath,
+        libName: library.libName
+      });
     });
   }
 
@@ -366,7 +403,8 @@ export class LinkerRow {
         attributes: {
           value: JSON.stringify({
             path: app.path,
-            runCommand: app.runCommand
+            runCommand: app.runCommand,
+            linkPath: app.linkPath
           })
         }
       });
@@ -380,7 +418,8 @@ export class LinkerRow {
         textContent: library.name,
         attributes: {
           value: JSON.stringify({
-            path: library.path
+            path: library.path,
+            linkPath: library.linkPath
           })
         }
       });
@@ -414,6 +453,12 @@ export class LinkerRow {
     const statusType = isSuccess ? 'compiled' : 'error';
     this.updateStatus(statusType, `${statusText} - ${currentDate}`);
     
+    // Re-enable link button
+    const linkButton = document.getElementById(`link-button-${this.rowId}`);
+    if (linkButton) {
+      linkButton.classList.remove('btn--disabled');
+    }
+    
     // Stop individual timer
     this.stopIndividualTimer();
   }
@@ -428,6 +473,12 @@ export class LinkerRow {
     
     const statusType = isSuccess ? 'compiled' : 'error';
     this.updateStatus(statusType, `${statusText} - ${currentDate}`);
+    
+    // Re-enable unlink button
+    const unlinkButton = document.getElementById(`unlink-button-${this.rowId}`);
+    if (unlinkButton) {
+      unlinkButton.classList.remove('btn--disabled');
+    }
     
     // Stop individual timer
     this.stopIndividualTimer();
@@ -537,6 +588,12 @@ export class LinkerRow {
   remove() {
     // Stop individual timer cleanup
     this.stopIndividualTimer();
+    
+    // Cleanup multiselect event listeners
+    const sourceMultiselect = document.getElementById(`linker-source-select-${this.rowId}`);
+    if (sourceMultiselect && sourceMultiselect._cleanup) {
+      sourceMultiselect._cleanup();
+    }
     
     // Unregister from process manager
     this.processManager.unregisterLinkerRow(this.rowId);
