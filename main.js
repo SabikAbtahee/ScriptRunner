@@ -71,9 +71,6 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
   }
-  
-  // TEMPORARY: Force DevTools for debugging (remove when done)
-  mainWindow.webContents.openDevTools();
 
   return mainWindow;
 }
