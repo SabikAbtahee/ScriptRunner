@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const kill = require('tree-kill');
@@ -82,7 +82,7 @@ function createWindow() {
 app.whenReady().then(() => {
   checkInitialConfig();
   createWindow();
-
+  
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -93,7 +93,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   // Kill all running processes before closing
   killAllRunningProcesses();
-
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -150,11 +150,21 @@ function writeToFile(filename, data) {
  * Utility functions
  */
 function killAllRunningProcesses() {
+  console.log(`Killing ${appState.runningApps.size} running processes`);
   appState.runningApps.forEach((pid, directory) => {
     console.log(`Killing process ${pid} for ${directory}`);
     kill(pid, 'SIGTERM', (err) => {
       if (err) {
-        console.error(`Error killing process ${pid}:`, err);
+        console.log(`SIGTERM failed for ${pid}, trying SIGKILL:`, err.message);
+        kill(pid, 'SIGKILL', (killErr) => {
+          if (killErr) {
+            console.error(`Error killing process ${pid}:`, killErr);
+          } else {
+            console.log(`Successfully killed process ${pid} with SIGKILL`);
+          }
+        });
+      } else {
+        console.log(`Successfully killed process ${pid} with SIGTERM`);
       }
     });
   });
@@ -183,40 +193,34 @@ function waitForExit(pid, timeoutMs) {
 }
 
 async function terminateProcessTree(pid, timeoutMs = 8000) {
-  console.log(`Terminating process tree for PID: ${pid}`);
-
-  // First try SIGTERM to gracefully kill the entire process tree
-  await new Promise((resolve) => {
+  return new Promise((resolve) => {
+    console.log(`Terminating process tree for PID: ${pid}`);
+    
+    // Use tree-kill to properly kill the process tree on all platforms
     kill(pid, 'SIGTERM', (err) => {
       if (err) {
-        console.log(`SIGTERM error for PID ${pid}:`, err.message);
+        console.log(`SIGTERM failed for PID ${pid}, trying SIGKILL:`, err.message);
+        // If SIGTERM fails, try SIGKILL
+        kill(pid, 'SIGKILL', (killErr) => {
+          if (killErr) {
+            console.error(`SIGKILL also failed for PID ${pid}:`, killErr.message);
+          } else {
+            console.log(`Successfully killed process tree for PID ${pid} with SIGKILL`);
+          }
+          resolve();
+        });
       } else {
-        console.log(`SIGTERM sent to process tree for PID: ${pid}`);
-      }
-      resolve();
-    });
-  });
-
-  // Wait for graceful shutdown
-  await waitForExit(pid, Math.floor(timeoutMs * 0.6));
-
-  // If process still exists, force kill the entire tree
-  if (processExists(pid)) {
-    console.log(`Process ${pid} still exists, sending SIGKILL to tree`);
-    await new Promise((resolve) => {
-      kill(pid, 'SIGKILL', (err) => {
-        if (err) {
-          console.log(`SIGKILL error for PID ${pid}:`, err.message);
-        } else {
-          console.log(`SIGKILL sent to process tree for PID: ${pid}`);
-        }
+        console.log(`Successfully killed process tree for PID ${pid} with SIGTERM`);
         resolve();
-      });
+      }
     });
-    await waitForExit(pid, Math.floor(timeoutMs * 0.4));
-  }
-
-  console.log(`Process tree termination completed for PID: ${pid}`);
+    
+    // Timeout fallback
+    setTimeout(() => {
+      console.log(`Timeout reached for killing PID ${pid}, proceeding anyway`);
+      resolve();
+    }, timeoutMs);
+  });
 }
 
 function parsePortFromCommandString(cmd) {
@@ -252,26 +256,29 @@ function parseCommand(command) {
   const parts = command.trim().split(' ');
   const baseCommand = parts[0];
   const args = parts.slice(1);
-
+  
   // For Angular CLI commands, use npx for better reliability in packaged apps
   if (baseCommand === 'ng') {
+    const resolvedNpx = resolveCommand('npx');
     return {
-      baseCommand: resolveCommand('npx'),
+      baseCommand: resolvedNpx.includes(' ') ? `"${resolvedNpx}"` : resolvedNpx,
       args: ['ng', ...args]
     };
   }
-
+  
   // For npm commands, try to resolve the full path
   if (baseCommand === 'npm') {
+    const resolvedNpm = resolveCommand('npm');
     return {
-      baseCommand: resolveCommand('npm'),
+      baseCommand: resolvedNpm.includes(' ') ? `"${resolvedNpm}"` : resolvedNpm,
       args
     };
   }
-
+  
   // For other commands, try to resolve
+  const resolvedCommand = resolveCommand(baseCommand);
   return {
-    baseCommand: resolveCommand(baseCommand),
+    baseCommand: resolvedCommand.includes(' ') ? `"${resolvedCommand}"` : resolvedCommand,
     args
   };
 }
@@ -281,32 +288,66 @@ function parseCommand(command) {
  */
 function getExtendedPath() {
   const originalPath = process.env.PATH || '';
-  const commonPaths = [
-    '/usr/local/bin',
-    '/opt/homebrew/bin',
-    '/Users/' + os.userInfo().username + '/.npm-global/bin',
-    process.cwd() + '/node_modules/.bin'
-  ];
   const home = os.homedir();
-  const nvmDir = process.env.NVM_DIR || path.join(home, '.nvm');
-  const nvmPaths = [];
-  if (fs.existsSync(nvmDir)) {
-    nvmPaths.push(path.join(nvmDir, 'bin'));
-    const versionsDir = path.join(nvmDir, 'versions', 'node');
-    if (fs.existsSync(versionsDir)) {
+  
+  let commonPaths = [];
+  
+  if (process.platform === 'win32') {
+    // Windows-specific paths
+    commonPaths = [
+      'C:\\Program Files\\nodejs',
+      'C:\\Program Files (x86)\\nodejs',
+      path.join(home, 'AppData', 'Roaming', 'npm'),
+      path.join(home, 'AppData', 'Roaming', 'nvm'),
+      process.cwd() + '\\node_modules\\.bin'
+    ];
+    
+    // Add NVM for Windows paths
+    const nvmHome = process.env.NVM_HOME || path.join(home, 'AppData', 'Roaming', 'nvm');
+    if (fs.existsSync(nvmHome)) {
       try {
-        const entries = fs.readdirSync(versionsDir, { withFileTypes: true });
+        const entries = fs.readdirSync(nvmHome, { withFileTypes: true });
         entries.forEach((entry) => {
-          if (entry.isDirectory()) {
-            nvmPaths.push(path.join(versionsDir, entry.name, 'bin'));
+          if (entry.isDirectory() && entry.name.startsWith('v')) {
+            commonPaths.push(path.join(nvmHome, entry.name));
           }
         });
-      } catch (_) { }
+      } catch (_) {}
     }
+  } else {
+    // Unix-like systems
+    commonPaths = [
+      '/usr/local/bin',
+      '/opt/homebrew/bin',
+      path.join(home, '.npm-global', 'bin'),
+      process.cwd() + '/node_modules/.bin'
+    ];
+    
+    // Add NVM paths for Unix-like systems
+    const nvmDir = process.env.NVM_DIR || path.join(home, '.nvm');
+    const nvmPaths = [];
+    if (fs.existsSync(nvmDir)) {
+      nvmPaths.push(path.join(nvmDir, 'bin'));
+      const versionsDir = path.join(nvmDir, 'versions', 'node');
+      if (fs.existsSync(versionsDir)) {
+        try {
+          const entries = fs.readdirSync(versionsDir, { withFileTypes: true });
+          entries.forEach((entry) => {
+            if (entry.isDirectory()) {
+              nvmPaths.push(path.join(versionsDir, entry.name, 'bin'));
+            }
+          });
+        } catch (_) {}
+      }
+    }
+    commonPaths.push(...nvmPaths);
+    
+    const voltaPath = path.join(home, '.volta', 'bin');
+    commonPaths.push(voltaPath);
   }
-  const voltaPath = path.join(home, '.volta', 'bin');
-  const allPaths = [originalPath, ...commonPaths, ...nvmPaths, voltaPath].filter(Boolean);
-  return allPaths.join(':');
+  
+  const allPaths = [originalPath, ...commonPaths].filter(Boolean);
+  return allPaths.join(process.platform === 'win32' ? ';' : ':');
 }
 
 /**
@@ -335,15 +376,53 @@ function resolveCommand(command) {
   };
   const override = ['node', 'npm', 'npx'].includes(command) ? getOverride(command) : null;
   if (override) return override;
+  
   try {
-    // Try to find the command using which
-    const result = execSync(`which ${command}`, {
+    // For Windows, try nvm which first for node-related commands
+    if (process.platform === 'win32' && ['node', 'npm', 'npx'].includes(command)) {
+      try {
+        const nvmResult = execSync(`nvm which current`, { encoding: 'utf8' }).trim();
+        if (nvmResult && fs.existsSync(nvmResult)) {
+          const nvmDir = path.dirname(nvmResult);
+          let targetCommand;
+          if (command === 'node') {
+            targetCommand = nvmResult;
+          } else if (command === 'npm') {
+            targetCommand = path.join(nvmDir, 'npm.cmd');
+          } else if (command === 'npx') {
+            targetCommand = path.join(nvmDir, 'npx.cmd');
+          }
+          
+          if (targetCommand && fs.existsSync(targetCommand)) {
+            console.log(`Resolved ${command} via NVM: ${targetCommand}`);
+            return targetCommand;
+          }
+        }
+      } catch (nvmError) {
+        console.log(`NVM lookup failed for ${command}, falling back to standard resolution`);
+      }
+    }
+    
+    // Try to find the command using which (Unix) or where (Windows)
+    const whichCommand = process.platform === 'win32' ? 'where' : 'which';
+    const result = execSync(`${whichCommand} ${command}`, { 
       encoding: 'utf8',
       env: { ...process.env, PATH: getExtendedPath() }
     }).trim();
-    return result || command;
+    
+    // On Windows, 'where' might return multiple paths, take the first one
+    const resolvedPath = process.platform === 'win32' ? result.split('\n')[0] : result;
+    
+    // Verify the resolved path exists
+    if (resolvedPath && fs.existsSync(resolvedPath)) {
+      console.log(`Resolved ${command}: ${resolvedPath}`);
+      return resolvedPath;
+    }
+    
+    console.log(`Could not verify path for ${command}: ${resolvedPath}`);
+    return command;
   } catch (error) {
-    console.log(`Could not resolve path for ${command}, using as-is`);
+    console.log(`Could not resolve path for ${command}, using as-is:`, error.message);
     return command;
   }
 }
@@ -377,11 +456,14 @@ ipcMain.handle('build_copy', async (event, param) => {
   try {
     const config = JSON.parse(param.source);
     const directory = config.path;
-
+    
     console.log(`Starting build in: ${directory}`);
-
-    const command = spawn(resolveCommand('npm'), ['run', 'build'], {
-      cwd: directory,
+    
+    const npmPath = resolveCommand('npm');
+    const executablePath = npmPath.includes(' ') ? `"${npmPath}"` : npmPath;
+    
+    const command = spawn(executablePath, ['run', 'build'], { 
+      cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -398,7 +480,7 @@ ipcMain.handle('build_copy', async (event, param) => {
     command.on('close', (code) => {
       console.log(`Build process exited with code: ${code}`);
       sendOutput(event, 'build_output', code.toString(), param.progress, true);
-
+      
       if (code === 0) {
         copyToDestination(event, param);
       } else {
@@ -422,11 +504,14 @@ ipcMain.handle('watch', async (event, param) => {
   try {
     const config = JSON.parse(param.source);
     const directory = config.path;
-
+    
     console.log(`Starting watch in: ${directory}`);
-
-    const command = spawn(resolveCommand('npx'), ['ng', 'build', '--watch'], {
-      cwd: directory,
+    
+    const npxPath = resolveCommand('npx');
+    const executablePath = npxPath.includes(' ') ? `"${npxPath}"` : npxPath;
+    
+    const command = spawn(executablePath, ['ng', 'build', '--watch'], { 
+      cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -458,52 +543,19 @@ ipcMain.handle('copy', async (event, param) => {
   copyToDestination(event, param);
 });
 
-// Get Node.js tool versions (node, npm, npx)
-ipcMain.handle('get-versions', async () => {
-  const runVersion = (tool) => new Promise((resolve) => {
-    try {
-      const command = spawn(resolveCommand(tool), ['-v'], {
-        shell: true,
-        env: { ...process.env, PATH: getExtendedPath() }
-      });
-      let stdout = '';
-      let stderr = '';
-      command.stdout.on('data', (d) => { stdout += d.toString(); });
-      command.stderr.on('data', (d) => { stderr += d.toString(); });
-      command.on('close', (code) => {
-        if (code === 0 && stdout.trim()) {
-          resolve(stdout.trim());
-        } else {
-          resolve((stderr || `exit ${code}`).toString().trim());
-        }
-      });
-      command.on('error', (err) => {
-        resolve(`error: ${err.message}`);
-      });
-    } catch (err) {
-      resolve(`error: ${err.message}`);
-    }
-  });
-
-  const [nodeV, npmV, npxV] = await Promise.all([
-    runVersion('node'),
-    runVersion('npm'),
-    runVersion('npx')
-  ]);
-
-  return { node: nodeV, npm: npmV, npx: npxV };
-});
-
 // Install dependencies
 ipcMain.handle('npm_install', async (event, param) => {
   try {
     const config = JSON.parse(param.path);
     const directory = config.path;
-
+    
     console.log(`Starting npm install in: ${directory}`);
-
-    const command = spawn(resolveCommand('npm'), ['install'], {
-      cwd: directory,
+    
+    const npmPath = resolveCommand('npm');
+    const executablePath = npmPath.includes(' ') ? `"${npmPath}"` : npmPath;
+    
+    const command = spawn(executablePath, ['install'], { 
+      cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
@@ -536,14 +588,24 @@ ipcMain.handle('npm_install', async (event, param) => {
 // Kill process
 ipcMain.handle('kill', async (event, param) => {
   const pid = param.command;
-
+  
   return new Promise((resolve) => {
-    kill(pid, 'SIGKILL', (err) => {
+    console.log(`Killing process ${pid} using tree-kill`);
+    kill(pid, 'SIGTERM', (err) => {
       if (err) {
-        console.error('Error killing process:', err);
-        resolve({ success: false, error: err.message });
+        console.log(`SIGTERM failed for ${pid}, trying SIGKILL:`, err.message);
+        // If SIGTERM fails, try SIGKILL
+        kill(pid, 'SIGKILL', (killErr) => {
+          if (killErr) {
+            console.error('Error killing process with SIGKILL:', killErr);
+            resolve({ success: false, error: killErr.message });
+          } else {
+            console.log('Process killed successfully with SIGKILL:', pid);
+            resolve({ success: true });
+          }
+        });
       } else {
-        console.log('Process killed successfully:', pid);
+        console.log('Process killed successfully with SIGTERM:', pid);
         resolve({ success: true });
       }
     });
@@ -556,49 +618,55 @@ ipcMain.handle('run_app', async (event, param) => {
     const appConfig = JSON.parse(param.path);
     const directory = appConfig.path;
     const runCommand = appConfig.runCommand || 'npm run start';
-
+    
     console.log('Starting app in directory:', directory);
     console.log('Using run command:', runCommand);
-
+    
     // Kill existing process if running
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
-      console.log(`Killing existing process tree for directory ${directory}, PID: ${existingPid}`);
+      console.log('Killing existing process:', existingPid);
       await terminateProcessTree(existingPid);
       appState.removeRunningApp(directory);
-      console.log(`Removed PID ${existingPid} from tracking after termination`);
+      
+      // Wait a bit for process cleanup on Windows
+      if (process.platform === 'win32') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
-
-
+    
     // Parse the command and arguments
     const { baseCommand, args } = parseCommand(runCommand);
     const port = parsePortFromCommandString(runCommand);
     await waitForPortFree(port);
-
-    const command = spawn(baseCommand, args, {
-      cwd: directory,
+    
+    const command = spawn(baseCommand, args, { 
+      cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
-    console.log(`Adding process to tracking - Directory: ${directory}, PID: ${command.pid}`);
+    
+    // Track this new process immediately
     appState.addRunningApp(directory, command.pid);
+    console.log(`Added new running app for ${directory} with PID: ${command.pid}`);
+    
     sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
-
+    
     command.stdout.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-
+    
     command.stderr.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-
+    
     command.on('close', (code) => {
-      console.log(`App process exited with code: ${code}, removing PID ${command.pid} from tracking`);
+      console.log('App process exited with code:', code);
       appState.removeRunningApp(directory);
     });
-
+    
     command.on('exit', (code) => {
-      console.log(`App process exit event with code: ${code}, removing PID ${command.pid} from tracking`);
+      console.log('App process exit event with code:', code);
       appState.removeRunningApp(directory);
     });
 
@@ -614,209 +682,61 @@ ipcMain.handle('run_app', async (event, param) => {
   }
 });
 
-// NPM Link operations
-ipcMain.handle('npm_link_library', async (event, param) => {
-  try {
-    const { linkPath, libName, progressId } = param;
-    
-    console.log(`Starting npm link in: ${linkPath} for library: ${libName}`);
-    
-    const command = spawn(resolveCommand('npm'), ['link'], {
-      cwd: linkPath,
-      shell: true,
-      env: { ...process.env, PATH: getExtendedPath() }
-    });
-    
-    sendOutput(event, 'link_output', `$ npm link (in ${linkPath})`, progressId, false);
-    
-    command.stdout.on('data', (data) => {
-      sendOutput(event, 'link_output', data.toString(), progressId, false);
-    });
-    
-    command.stderr.on('data', (data) => {
-      sendOutput(event, 'link_output', data.toString(), progressId, false);
-    });
-    
-    command.on('close', (code) => {
-      console.log(`npm link process exited with code: ${code} for ${libName}`);
-      sendOutput(event, 'link_output', `npm link completed for ${libName} with exit code: ${code}`, progressId, true, code);
-    });
-    
-    command.on('error', (error) => {
-      console.error('npm link process error:', error);
-      sendOutput(event, 'link_output', `Error: ${error.message}`, progressId, true, -1);
-    });
-    
-  } catch (error) {
-    console.error('Failed to start npm link:', error);
-    sendOutput(event, 'link_output', `Failed to start npm link: ${error.message}`, param.progressId, true, -1);
-  }
-});
-
-ipcMain.handle('npm_link_destination', async (event, param) => {
-  try {
-    const { linkPath, libNames, progressId } = param;
-    
-    console.log(`Starting npm link in destination: ${linkPath} for libraries: ${libNames.join(', ')}`);
-    
-    const command = spawn(resolveCommand('npm'), ['link', ...libNames], {
-      cwd: linkPath,
-      shell: true,
-      env: { ...process.env, PATH: getExtendedPath() }
-    });
-    
-    sendOutput(event, 'link_output', `$ npm link ${libNames.join(' ')} (in ${linkPath})`, progressId, false);
-    
-    command.stdout.on('data', (data) => {
-      sendOutput(event, 'link_output', data.toString(), progressId, false);
-    });
-    
-    command.stderr.on('data', (data) => {
-      sendOutput(event, 'link_output', data.toString(), progressId, false);
-    });
-    
-    command.on('close', (code) => {
-      console.log(`npm link destination process exited with code: ${code}`);
-      sendOutput(event, 'link_output', `npm link destination completed with exit code: ${code}`, progressId, true, code);
-    });
-    
-    command.on('error', (error) => {
-      console.error('npm link destination process error:', error);
-      sendOutput(event, 'link_output', `Error: ${error.message}`, progressId, true, -1);
-    });
-    
-  } catch (error) {
-    console.error('Failed to start npm link destination:', error);
-    sendOutput(event, 'link_output', `Failed to start npm link destination: ${error.message}`, param.progressId, true, -1);
-  }
-});
-
-// NPM Unlink operations
-ipcMain.handle('npm_unlink_destination', async (event, param) => {
-  try {
-    const { linkPath, libNames, progressId } = param;
-    
-    console.log(`Starting npm unlink in destination: ${linkPath} for libraries: ${libNames.join(', ')}`);
-    
-    const command = spawn(resolveCommand('npm'), ['unlink', ...libNames], {
-      cwd: linkPath,
-      shell: true,
-      env: { ...process.env, PATH: getExtendedPath() }
-    });
-    
-    sendOutput(event, 'unlink_output', `$ npm unlink ${libNames.join(' ')} (in ${linkPath})`, progressId, false);
-    
-    command.stdout.on('data', (data) => {
-      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
-    });
-    
-    command.stderr.on('data', (data) => {
-      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
-    });
-    
-    command.on('close', (code) => {
-      console.log(`npm unlink destination process exited with code: ${code}`);
-      sendOutput(event, 'unlink_output', `npm unlink destination completed with exit code: ${code}`, progressId, true, code);
-    });
-    
-    command.on('error', (error) => {
-      console.error('npm unlink destination process error:', error);
-      sendOutput(event, 'unlink_output', `Error: ${error.message}`, progressId, true, -1);
-    });
-    
-  } catch (error) {
-    console.error('Failed to start npm unlink destination:', error);
-    sendOutput(event, 'unlink_output', `Failed to start npm unlink destination: ${error.message}`, param.progressId, true, -1);
-  }
-});
-
-ipcMain.handle('npm_unlink_library', async (event, param) => {
-  try {
-    const { linkPath, libName, progressId } = param;
-    
-    console.log(`Starting npm unlink -g in: ${linkPath} for library: ${libName}`);
-    
-    const command = spawn(resolveCommand('npm'), ['unlink', '-g', libName], {
-      cwd: linkPath,
-      shell: true,
-      env: { ...process.env, PATH: getExtendedPath() }
-    });
-    
-    sendOutput(event, 'unlink_output', `$ npm unlink -g ${libName} (in ${linkPath})`, progressId, false);
-    
-    command.stdout.on('data', (data) => {
-      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
-    });
-    
-    command.stderr.on('data', (data) => {
-      sendOutput(event, 'unlink_output', data.toString(), progressId, false);
-    });
-    
-    command.on('close', (code) => {
-      console.log(`npm unlink -g process exited with code: ${code} for ${libName}`);
-      sendOutput(event, 'unlink_output', `npm unlink -g completed for ${libName} with exit code: ${code}`, progressId, true, code);
-    });
-    
-    command.on('error', (error) => {
-      console.error('npm unlink -g process error:', error);
-      sendOutput(event, 'unlink_output', `Error: ${error.message}`, progressId, true, -1);
-    });
-    
-  } catch (error) {
-    console.error('Failed to start npm unlink -g:', error);
-    sendOutput(event, 'unlink_output', `Failed to start npm unlink -g: ${error.message}`, param.progressId, true, -1);
-  }
-});
-
 // Restart application
 ipcMain.handle('restart_app', async (event, param) => {
   try {
     const appConfig = JSON.parse(param.path);
     const directory = appConfig.path;
     const runCommand = appConfig.runCommand || 'npm run start';
-
+    
     console.log('Restarting app in directory:', directory);
     console.log('Using run command:', runCommand);
-
+    
     // Kill existing process first
     if (appState.hasRunningApp(directory)) {
       const existingPid = appState.getRunningApp(directory);
-      console.log(`Killing existing process tree for restart in directory ${directory}, PID: ${existingPid}`);
+      console.log('Killing existing process for restart:', existingPid);
       await terminateProcessTree(existingPid);
       appState.removeRunningApp(directory);
-      console.log(`Removed PID ${existingPid} from tracking after restart termination`);
+      
+      // Wait a bit for process cleanup on Windows
+      if (process.platform === 'win32') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
-
+    
     // Start new process
     const { baseCommand, args } = parseCommand(runCommand);
     const port = parsePortFromCommandString(runCommand);
     await waitForPortFree(port);
-
-    const command = spawn(baseCommand, args, {
-      cwd: directory,
+    
+    const command = spawn(baseCommand, args, { 
+      cwd: directory, 
       shell: true,
       env: { ...process.env, PATH: getExtendedPath() }
     });
-    sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
-
-    // Track this process
+    
+    // Track this new process immediately
     appState.addRunningApp(directory, command.pid);
-
+    console.log(`Added new running app for restart ${directory} with PID: ${command.pid}`);
+    
+    sendOutput(event, 'app_output', `$ ${runCommand}`, param.progress, param.rowCounter, command.pid);
+    
     command.stdout.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-
+    
     command.stderr.on('data', (data) => {
       sendOutput(event, 'app_output', data.toString(), param.progress, param.rowCounter, command.pid);
     });
-
+    
     command.on('close', (code) => {
-      console.log(`Restart app process exited with code: ${code}, removing PID ${command.pid} from tracking`);
+      console.log('Restart app process exited with code:', code);
       appState.removeRunningApp(directory);
     });
-
+    
     command.on('exit', (code) => {
-      console.log(`Restart app process exit event with code: ${code}, removing PID ${command.pid} from tracking`);
+      console.log('Restart app exit event with code:', code);
       appState.removeRunningApp(directory);
     });
 
@@ -839,7 +759,7 @@ function copyToDestination(event, param) {
   try {
     const sourceConfig = JSON.parse(param.source);
     const destConfig = JSON.parse(param.destination);
-
+    
     const sourceDirectory = sourceConfig.path;
     const sourceLibDirectory = sourceConfig.node_path;
     const destinationDirectory = destConfig.path;
@@ -850,8 +770,24 @@ function copyToDestination(event, param) {
     console.log(`Copying from: ${sourcePattern}`);
     console.log(`Copying to: ${destinationPath}`);
 
-    const command = spawn(resolveCommand('npx'), ['cpx', sourcePattern, destinationPath], {
-      env: { ...process.env, PATH: getExtendedPath() }
+    const npxPath = resolveCommand('npx');
+    console.log(`Using npx path: ${npxPath}`);
+    
+    // Verify npx exists before spawning
+    const cleanNpxPath = npxPath.replace(/^"(.*)"$/, '$1');
+    if (!fs.existsSync(cleanNpxPath)) {
+      const errorMsg = `npx not found at path: ${cleanNpxPath}`;
+      console.error(errorMsg);
+      sendOutput(event, 'copy_output', errorMsg, param.progress, true);
+      return;
+    }
+
+    // Quote the path if it contains spaces
+    const executablePath = npxPath.includes(' ') ? `"${npxPath}"` : npxPath;
+    
+    const command = spawn(executablePath, ['cpx', sourcePattern, destinationPath], {
+      env: { ...process.env, PATH: getExtendedPath() },
+      shell: true
     });
     sendOutput(event, 'copy_output', `$ npx cpx ${sourcePattern} ${destinationPath}`, param.progress, false);
 
@@ -866,7 +802,7 @@ function copyToDestination(event, param) {
     command.on('close', (code) => {
       const commandString = `cpx "${sourcePattern}" "${destinationPath}"`;
       sendOutput(event, 'copy_output', commandString, param.progress, false);
-
+      
       if (code !== 0) {
         console.error(`Copy failed with exit code: ${code}`);
         sendOutput(event, 'copy_output', `Copy failed with exit code: ${code}`, param.progress, true);

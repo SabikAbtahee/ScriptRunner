@@ -1,107 +1,87 @@
 {
     "NodeTools": {
-        "node": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/node",
-        "npm": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/npm",
-        "npx": "/Users/sabik.abtahee@iqvia.com/.nvm/versions/node/v22.14.0/bin/npx"
-    },
+        "node": "C:/Program Files/nodejs/node.exe",
+  "npm": "C:/Program Files/nodejs/npm.cmd",
+  "npx": "C:/Program Files/nodejs/npx.cmd"
+},
     "Application": {
         "PMI_Framework_Admin": {
             "name": "Admin",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin",
-            "runCommand": "ng serve --port=4201",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin"
+            "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_Admin",
+             "runCommand":"ng serve --port=4201"
         },
         "pmi_framework_kpidashboard": {
             "name": "KPIDashboard",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard",
-            "runCommand": "ng serve --port=4200",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard"
+            "path": "C:/Users/u1180569/Projects/KPI/pmi_framework_kpidashboard",
+             "runCommand":"ng serve --port=4200"
         },
         "PMI_Framework_AiAssistant": {
             "name": "AiAssistant",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant",
-            "runCommand": "ng serve --port=4203",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant"
-
+            "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_AiAssistant",
+             "runCommand":"ng serve --port=4203"
         },
         "PMI_Framework_WidgetTemplateEditor": {
             "name": "WidgetTemplateEditor",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor",
-            "runCommand": "ng serve --port=4200",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor"
-
+            "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_WidgetTemplateEditor",
+            "runCommand":"ng serve --port=4200"
         }
     },
     "Library": {
         "PMI_Library_AIChatbotUI": {
             "name": "AIChatbotUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AIChatbotUI",
-            "libPath": "node_modules/@pmi/ai-chatbot",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AIChatbotUI/dist",
-            "libName":"@pmi/ai-chatbot"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_AIChatbotUI",
+            "libPath":"node_modules/@pmi/ai-chatbot"
         },
         "PMI_Library_ApolloUI": {
             "name": "ApolloUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ApolloUI",
-            "libPath": "node_modules/@pmi/pmi.apollo.ui",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ApolloUI/dist",
-            "libName":"@pmi/pmi.apollo.ui"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_ApolloUI",
+            "libPath":"node_modules/@pmi/pmi.apollo.ui"
+
         },
         "PMI_Library_AuthUI": {
             "name": "AuthUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AuthUI",
-            "libPath": "node_modules/@pmi/auth",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_AuthUI/dist",
-            "libName":"@pmi/auth"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_AuthUI",
+            "libPath":"node_modules/@pmi/auth"
         },
         "PMI_Library_BusinessQuestionsUI": {
             "name": "BusinessQuestionsUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_BusinessQuestionsUI",
-            "libPath": "node_modules/@pmi/business-questions",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_BusinessQuestionsUI/dist",
-            "libName":"@pmi/business-questions"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_BusinessQuestionsUI",
+            "libPath":"node_modules/@pmi/business-questions"
+
         },
         "PMI_Library_ConstantsUI": {
             "name": "ConstantsUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ConstantsUI",
-            "libPath": "node_modules/@pmi/constants",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ConstantsUI/dist",
-            "libName":"@pmi/constants"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_ConstantsUI",
+            "libPath":"node_modules/@pmi/constants"
         },
         "PMI_Library_FiltersUI": {
             "name": "FiltersUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FiltersUI",
-            "libPath": "node_modules/@pmi/filters",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FiltersUI/dist",
-            "libName":"@pmi/filters"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_FiltersUI",
+            "libPath":"node_modules/@pmi/filters"
         },
         "PMI_Library_FrameworkKPIUI": {
             "name": "FrameworkKPIUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FrameworkKPIUI",
-            "libPath": "node_modules/@pmi/kpi-ui",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FrameworkKPIUI/dist",
-            "libName":"@pmi/kpi-ui"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_FrameworkKPIUI",
+            "libPath":"node_modules/@pmi/kpi-ui"
+
         },
         "PMI_Library_PayloadDashboardUI": {
             "name": "PayloadDashboardUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_PayloadDashboardUI",
-            "libPath": "node_modules/@pmi/payload-dashboard",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_PayloadDashboardUI/dist",
-            "libName":"@pmi/payload-dashboard"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_PayloadDashboardUI",
+            "libPath":"node_modules/@pmi/payload-dashboard"
+
         },
         "PMI_Library_WidgetsUI": {
             "name": "WidgetsUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsUI",
-            "libPath": "node_modules/@pmi/widgets",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsUI/dist",
-            "libName":"@pmi/widgets"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_WidgetsUI",
+            "libPath":"node_modules/@pmi/widgets"
+
         },
         "PMI_Library_WidgetsSharedUI": {
             "name": "WidgetsSharedUI",
-            "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsSharedUI",
-            "libPath": "node_modules/@pmi/widgets-shared",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_WidgetsSharedUI/dist",
-            "libName":"@pmi/widgets-shared"
+            "path": "C:/Users/u1180569/Projects/KPI_Library/PMI_Library_WidgetsSharedUI",
+            "libPath":"node_modules/@pmi/widgets-shared"
+
         }
     }
 }

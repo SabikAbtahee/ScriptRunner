@@ -1,6 +1,5 @@
 import { BuildRow } from './build-row.js';
 import { AppRow } from './app-row.js';
-import { LinkerRow } from './linker-row.js';
 import { ProcessManager } from './process-manager.js';
 import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
@@ -18,7 +17,6 @@ class ScriptRunnerApp {
     this.container = null;
     this.buildRows = new Map(); // Track build row instances
     this.appRows = new Map(); // Track app row instances
-    this.linkerRows = new Map(); // Track linker row instances
     
     this.init();
   }
@@ -84,22 +82,6 @@ class ScriptRunnerApp {
       });
     }
 
-    // Add linker row button
-    const addLinkerRowButton = document.getElementById('addLinkerRowButton');
-    if (addLinkerRowButton) {
-      DOMUtils.addSafeEventListener(addLinkerRowButton, 'click', () => {
-        this.createLinkerRow();
-      });
-    }
-
-    // Show versions button
-    const showVersionsButton = document.getElementById('showVersionsButton');
-    if (showVersionsButton) {
-      DOMUtils.addSafeEventListener(showVersionsButton, 'click', async () => {
-        await this.showNodeToolVersions();
-      });
-    }
-
     // Handle keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -112,40 +94,9 @@ class ScriptRunnerApp {
             e.preventDefault();
             this.createAppRow();
             break;
-          case 'l':
-            e.preventDefault();
-            this.createLinkerRow();
-            break;
         }
       }
     });
-  }
-
-  async showNodeToolVersions() {
-    try {
-      const containerId = 'versions-panel';
-      let panel = document.getElementById(containerId);
-      if (!panel) {
-        panel = DOMUtils.createElement('pre', {
-          id: containerId,
-          className: 'terminal u-fade-in',
-          attributes: { style: 'margin: 12px 0;' }
-        });
-        this.container.prepend(panel);
-      }
-      panel.innerText = 'Collecting versions...\n';
-
-      const versions = await window.API.get_versions();
-      const lines = [
-        `node: ${versions.node}`,
-        `npm:  ${versions.npm}`,
-        `npx:  ${versions.npx}`
-      ];
-      panel.innerText = lines.join('\n') + '\n';
-    } catch (error) {
-      console.error('Failed to get versions:', error);
-      this.showError('Failed to fetch versions');
-    }
   }
 
   async createBuildRow() {
@@ -191,29 +142,6 @@ class ScriptRunnerApp {
     } catch (error) {
       console.error('Failed to create app row:', error);
       this.showError('Failed to create app row');
-    }
-  }
-
-  async createLinkerRow() {
-    try {
-      this.rowCounter++;
-      const linkerRow = new LinkerRow(
-        this.container, 
-        this.processManager, 
-        this.timeTracker,
-        this.rowCounter,
-        (rowId, type) => this.handleRowRemoval(rowId, type)
-      );
-      await linkerRow.create();
-      
-      // Store reference to the row instance
-      this.linkerRows.set(this.rowCounter, linkerRow);
-      
-      // Scroll to new row
-      linkerRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } catch (error) {
-      console.error('Failed to create linker row:', error);
-      this.showError('Failed to create linker row');
     }
   }
 
@@ -323,15 +251,6 @@ class ScriptRunnerApp {
         console.error(`Failed to refresh app row ${rowId}:`, error);
       }
     }
-
-    // Refresh all linker rows using stored instances
-    for (const [rowId, linkerRow] of this.linkerRows) {
-      try {
-        await linkerRow.refreshSelectors();
-      } catch (error) {
-        console.error(`Failed to refresh linker row ${rowId}:`, error);
-      }
-    }
   }
 
   checkSavedConfig() {
@@ -347,8 +266,6 @@ class ScriptRunnerApp {
       this.buildRows.delete(rowId);
     } else if (type === 'app') {
       this.appRows.delete(rowId);
-    } else if (type === 'linker') {
-      this.linkerRows.delete(rowId);
     }
   }
 }

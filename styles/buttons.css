@@ -93,18 +93,6 @@
   color: white;
 }
 
-/* Linker button variant - cyan color */
-.btn--linker {
-  background-color: #06b6d4;
-  color: white;
-}
-
-/* Unlinker button variant - red-orange color */
-.btn--unlinker {
-  background-color: #dc2626;
-  color: white;
-}
-
 /* Install button variant - green color */
 .btn--install {
   background-color: #000000;
@@ -151,14 +139,6 @@
 
 .btn--app:hover:not(.btn--disabled) {
   background-color: #e600dc;
-}
-
-.btn--linker:hover:not(.btn--disabled) {
-  background-color: #0891b2;
-}
-
-.btn--unlinker:hover:not(.btn--disabled) {
-  background-color: #b91c1c;
 }
 
 .btn--install:hover:not(.btn--disabled) {
