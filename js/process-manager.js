@@ -69,6 +69,16 @@ export class ProcessManager {
     window.API.install_output((data, progress, isDone) => {
       this.handleInstallOutput(data, progress, isDone);
     });
+
+    // Link output listener
+    window.API.link_output((data, progress, isDone, exitCode) => {
+      this.handleLinkOutput(data, progress, isDone, exitCode);
+    });
+
+    // Unlink output listener
+    window.API.unlink_output((data, progress, isDone, exitCode) => {
+      this.handleUnlinkOutput(data, progress, isDone, exitCode);
+    });
   }
 
   async buildAndCopy(source, destination, progressId, operationId = null) {
@@ -129,6 +139,146 @@ export class ProcessManager {
       // Stop timer on error
       this.stopTimerForOperation(progressId);
     }
+  }
+
+  async linkLibraries(libraries, destination, progressId, operationId = null) {
+    try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+
+      // Store the linking operation state
+      this.linkingOperations = this.linkingOperations || new Map();
+      this.linkingOperations.set(progressId, {
+        libraries,
+        destination,
+        currentLibraryIndex: 0,
+        completedLibraries: [],
+        operationId
+      });
+
+      // Start linking the first library
+      await this.linkNextLibrary(progressId);
+    } catch (error) {
+      console.error('Link libraries failed:', error);
+      this.showError(progressId, 'Link failed');
+      this.stopTimerForOperation(progressId);
+    }
+  }
+
+  async linkNextLibrary(progressId) {
+    const operation = this.linkingOperations.get(progressId);
+    if (!operation) return;
+
+    const { libraries, currentLibraryIndex } = operation;
+    
+    if (currentLibraryIndex >= libraries.length) {
+      // All libraries linked, now link to destination
+      await this.linkToDestination(progressId);
+      return;
+    }
+
+    const library = libraries[currentLibraryIndex];
+    console.log(`Linking library ${currentLibraryIndex + 1}/${libraries.length}: ${library.libName}`);
+
+    await window.API.npm_link_library({
+      linkPath: library.linkPath,
+      libName: library.libName,
+      progressId: progressId
+    });
+  }
+
+  async linkToDestination(progressId) {
+    const operation = this.linkingOperations.get(progressId);
+    if (!operation) return;
+
+    const { destination, completedLibraries } = operation;
+    const libNames = completedLibraries.map(lib => lib.libName);
+
+    console.log(`Linking to destination: ${destination.linkPath} with libraries: ${libNames.join(', ')}`);
+
+    await window.API.npm_link_destination({
+      linkPath: destination.linkPath,
+      libNames: libNames,
+      progressId: progressId
+    });
+  }
+
+  async unlinkLibraries(libraries, destination, progressId, operationId = null) {
+    try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+
+      // Store the unlinking operation state
+      this.unlinkingOperations = this.unlinkingOperations || new Map();
+      this.unlinkingOperations.set(progressId, {
+        libraries,
+        destination,
+        currentLibraryIndex: 0,
+        completedLibraries: [],
+        operationId,
+        phase: 'destination' // Start with destination unlink
+      });
+
+      // Start with unlinking from destination first
+      await this.unlinkFromDestination(progressId);
+    } catch (error) {
+      console.error('Unlink libraries failed:', error);
+      this.showError(progressId, 'Unlink failed');
+      this.stopTimerForOperation(progressId);
+    }
+  }
+
+  async unlinkFromDestination(progressId) {
+    const operation = this.unlinkingOperations.get(progressId);
+    if (!operation) return;
+
+    const { libraries, destination } = operation;
+    const libNames = libraries.map(lib => lib.libName);
+
+    console.log(`Unlinking from destination: ${destination.linkPath} with libraries: ${libNames.join(', ')}`);
+
+    await window.API.npm_unlink_destination({
+      linkPath: destination.linkPath,
+      libNames: libNames,
+      progressId: progressId
+    });
+  }
+
+  async unlinkNextLibrary(progressId) {
+    const operation = this.unlinkingOperations.get(progressId);
+    if (!operation) return;
+
+    const { libraries, currentLibraryIndex } = operation;
+    
+    if (currentLibraryIndex >= libraries.length) {
+      // All libraries unlinked - operation complete
+      this.stopTimerForOperation(progressId);
+      
+      // Find the linker row instance and mark complete
+      const rowId = progressId.replace(/^linker-progress-/, '');
+      const linkerRowInstance = this.linkerRows?.get(parseInt(rowId));
+      
+      if (linkerRowInstance) {
+        linkerRowInstance.setUnlinkCompleteStatus(true);
+      }
+      
+      // Clean up operation
+      this.unlinkingOperations.delete(progressId);
+      return;
+    }
+
+    const library = libraries[currentLibraryIndex];
+    console.log(`Unlinking library ${currentLibraryIndex + 1}/${libraries.length}: ${library.libName}`);
+
+    await window.API.npm_unlink_library({
+      linkPath: library.linkPath,
+      libName: library.libName,
+      progressId: progressId
+    });
   }
 
   async runApp(appPath, progressId, rowCounter, operationId = null) {
@@ -421,6 +571,140 @@ export class ProcessManager {
         
         if (appRowInstance) {
           appRowInstance.onInstallComplete(isSuccess);
+        }
+      }
+    }
+  }
+
+  handleLinkOutput(data, progress, isDone, exitCode) {
+    const element = document.getElementById(progress);
+    if (element) {
+      element.classList.remove('u-hidden');
+      element.innerText += data + '\n';
+      element.scrollTop = element.scrollHeight;
+
+      // Check for successful npm link patterns
+      if (data.includes('linked') || data.includes('symlink') || 
+          data.includes('successfully linked') || data.includes('npm link completed')) {
+        element.className = 'terminal terminal--success';
+      }
+      
+      // Check for errors - npm link specific error patterns
+      if (data.includes('ERROR') || data.includes('error') || data.includes('Error') ||
+          data.includes('ENOENT') || data.includes('EACCES') || data.includes('npm ERR!') ||
+          data.includes('permission denied') || data.includes('ENOTFOUND') ||
+          data.includes('code E') || data.includes('errno -') || 
+          data.includes('Cannot resolve') || data.includes('Module not found')) {
+        element.className = 'terminal terminal--error';
+      }
+
+      if (isDone) {
+        const operation = this.linkingOperations?.get(progress);
+        if (operation) {
+          const isSuccess = exitCode === 0 && !element.className.includes('terminal--error');
+          
+          if (isSuccess) {
+            // Move to next library or destination
+            const { libraries, currentLibraryIndex } = operation;
+            
+            if (currentLibraryIndex < libraries.length) {
+              // We just completed linking a library
+              operation.completedLibraries.push(libraries[currentLibraryIndex]);
+              operation.currentLibraryIndex++;
+              
+              // Continue with next library
+              this.linkNextLibrary(progress);
+            } else {
+              // We just completed linking to destination - operation complete
+              this.stopTimerForOperation(progress);
+              
+              // Find the linker row instance and mark complete
+              const rowId = progress.replace(/^linker-progress-/, '');
+              const linkerRowInstance = this.linkerRows?.get(parseInt(rowId));
+              
+              if (linkerRowInstance) {
+                linkerRowInstance.setLinkCompleteStatus(true);
+              }
+              
+              // Clean up operation
+              this.linkingOperations.delete(progress);
+            }
+          } else {
+            // Link failed - stop operation
+            this.stopTimerForOperation(progress);
+            
+            const rowId = progress.replace(/^linker-progress-/, '');
+            const linkerRowInstance = this.linkerRows?.get(parseInt(rowId));
+            
+            if (linkerRowInstance) {
+              linkerRowInstance.setLinkCompleteStatus(false);
+            }
+            
+            // Clean up operation
+            this.linkingOperations.delete(progress);
+          }
+        }
+      }
+    }
+  }
+
+  handleUnlinkOutput(data, progress, isDone, exitCode) {
+    const element = document.getElementById(progress);
+    if (element) {
+      element.classList.remove('u-hidden');
+      element.innerText += data + '\n';
+      element.scrollTop = element.scrollHeight;
+
+      // Check for successful npm unlink patterns
+      if (data.includes('unlinked') || data.includes('removed') || 
+          data.includes('successfully unlinked') || data.includes('npm unlink completed')) {
+        element.className = 'terminal terminal--success';
+      }
+      
+      // Check for errors - npm unlink specific error patterns
+      if (data.includes('ERROR') || data.includes('error') || data.includes('Error') ||
+          data.includes('ENOENT') || data.includes('EACCES') || data.includes('npm ERR!') ||
+          data.includes('permission denied') || data.includes('ENOTFOUND') ||
+          data.includes('code E') || data.includes('errno -') || 
+          data.includes('Cannot resolve') || data.includes('Module not found')) {
+        element.className = 'terminal terminal--error';
+      }
+
+      if (isDone) {
+        const operation = this.unlinkingOperations?.get(progress);
+        if (operation) {
+          const isSuccess = exitCode === 0 && !element.className.includes('terminal--error');
+          
+          if (isSuccess) {
+            const { phase, currentLibraryIndex, libraries } = operation;
+            
+            if (phase === 'destination') {
+              // Destination unlink completed, now start unlinking libraries
+              operation.phase = 'libraries';
+              operation.currentLibraryIndex = 0;
+              this.unlinkNextLibrary(progress);
+            } else if (phase === 'libraries') {
+              // We just completed unlinking a library
+              operation.completedLibraries.push(libraries[currentLibraryIndex]);
+              operation.currentLibraryIndex++;
+              
+              // Continue with next library
+              this.unlinkNextLibrary(progress);
+            }
+          } else {
+            // Unlink failed - stop operation
+            this.stopTimerForOperation(progress);
+            
+            const rowId = progress.replace(/^linker-progress-/, '');
+            const linkerRowInstance = this.linkerRows?.get(parseInt(rowId));
+            
+            if (linkerRowInstance) {
+              linkerRowInstance.setUnlinkCompleteStatus(false);
+            }
+            
+            // Clean up operation
+            this.unlinkingOperations.delete(progress);
+          }
         }
       }
     }
