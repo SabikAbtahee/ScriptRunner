@@ -31,6 +31,19 @@ export class ProcessManager {
     this.buildRows.delete(rowCounter);
   }
 
+  // Register a linker row instance
+  registerLinkerRow(rowCounter, linkerRowInstance) {
+    this.linkerRows = this.linkerRows || new Map();
+    this.linkerRows.set(rowCounter, linkerRowInstance);
+  }
+
+  // Unregister a linker row instance
+  unregisterLinkerRow(rowCounter) {
+    if (this.linkerRows) {
+      this.linkerRows.delete(rowCounter);
+    }
+  }
+
   setupEventListeners() {
     // Build output listener
     window.API.build_output((data, progress, isDone) => {
