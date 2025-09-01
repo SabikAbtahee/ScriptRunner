@@ -49,7 +49,9 @@
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ApolloUI",
             "libPath": "node_modules/@pmi/pmi.apollo.ui",
             "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_ApolloUI/dist",
-            "libName":"@pmi/pmi.apollo.ui"
+            "libName":"@pmi/pmi.apollo.ui",
+            "build-assets":"npm run build-assets"
+
         },
         "PMI_Library_AuthUI": {
             "name": "AuthUI",
@@ -78,14 +80,18 @@
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FiltersUI",
             "libPath": "node_modules/@pmi/filters",
             "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FiltersUI/dist",
-            "libName":"@pmi/filters"
+            "libName":"@pmi/filters",
+            "build-assets":"npm run build-assets"
+
         },
         "PMI_Library_FrameworkKPIUI": {
             "name": "FrameworkKPIUI",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FrameworkKPIUI",
             "libPath": "node_modules/@pmi/kpi-ui",
             "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_FrameworkKPIUI/dist",
-            "libName":"@pmi/kpi-ui"
+            "libName":"@pmi/kpi-ui",
+            "build-assets":"npm run build-assets"
+
         },
         "PMI_Library_PayloadDashboardUI": {
             "name": "PayloadDashboardUI",
