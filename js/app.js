@@ -5,6 +5,7 @@ import { ProcessManager } from './process-manager.js';
 import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
 import { TimeTracker } from './time-tracker.js';
+import { FileEditor } from './file-editor.js';
 
 /**
  * Main Application Class
@@ -99,6 +100,25 @@ class ScriptRunnerApp {
         await this.showNodeToolVersions();
       });
     }
+
+    // Test file API (temporary for debugging)
+    console.log('Testing file API availability:');
+    console.log('window.API:', !!window.API);
+    console.log('window.API.read_file:', !!window.API?.read_file);
+    console.log('window.API.write_file:', !!window.API?.write_file);
+    
+    // Add a global test function for debugging
+    window.testFileAPI = async (filePath) => {
+      try {
+        console.log('Testing file read for:', filePath);
+        const result = await window.API.read_file(filePath);
+        console.log('Test result:', result);
+        return result;
+      } catch (error) {
+        console.error('Test error:', error);
+        return { success: false, error: error.message };
+      }
+    };
 
     // Handle keyboard shortcuts
     document.addEventListener('keydown', (e) => {
