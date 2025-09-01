@@ -43,7 +43,7 @@ class ScriptRunnerApp {
       this.checkSavedConfig();
       this.createInitialBuildRow();
       
-      console.log('Script Runner 3.0 initialized successfully');
+      console.log('Script Runner initialized successfully');
     } catch (error) {
       console.error('Failed to initialize app:', error);
       this.showError('Failed to initialize application');
