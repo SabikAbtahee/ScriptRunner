@@ -551,6 +551,50 @@ ipcMain.handle('npm_install', async (event, param) => {
   }
 });
 
+// Run custom npm command (for build-assets)
+ipcMain.handle('npm_custom_command', async (event, param) => {
+  try {
+    const directory = param.path;
+    const customCommand = param.command;
+    const libraryName = param.libraryName || 'library';
+
+    console.log(`Starting custom command in: ${directory}`);
+    console.log(`Command: ${customCommand}`);
+
+    // Parse the command and arguments
+    const { baseCommand, args } = parseCommand(customCommand);
+
+    const command = spawn(baseCommand, args, {
+      cwd: directory,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    sendOutput(event, 'copy_assets_output', `$ ${customCommand}`, param.progress, false, param.libraryName);
+
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'copy_assets_output', data.toString(), param.progress, false, param.libraryName);
+    });
+
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'copy_assets_output', data.toString(), param.progress, false, param.libraryName);
+    });
+
+    command.on('close', (code) => {
+      console.log(`Custom command process exited with code: ${code}`);
+      sendOutput(event, 'copy_assets_output', `${libraryName} build-assets completed with exit code: ${code}`, param.progress, true, param.libraryName);
+    });
+
+    command.on('error', (error) => {
+      console.error('Custom command process error:', error);
+      sendOutput(event, 'copy_assets_output', `Error: ${error.message}`, param.progress, true, param.libraryName);
+    });
+
+  } catch (error) {
+    console.error('Failed to start custom command:', error);
+    sendOutput(event, 'copy_assets_output', `Failed to start custom command: ${error.message}`, param.progress, true, param.libraryName);
+  }
+});
+
 // Kill process
 ipcMain.handle('kill', async (event, param) => {
   const pid = param.command;

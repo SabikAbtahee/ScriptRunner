@@ -79,6 +79,11 @@ export class ProcessManager {
     window.API.unlink_output((data, progress, isDone, exitCode) => {
       this.handleUnlinkOutput(data, progress, isDone, exitCode);
     });
+
+    // Copy Assets output listener  
+    window.API.copy_assets_output((data, progress, isDone, libraryName) => {
+      this.handleCopyAssetsOutput(data, progress, isDone, libraryName);
+    });
   }
 
   async buildAndCopy(source, destination, progressId, operationId = null) {
@@ -163,6 +168,31 @@ export class ProcessManager {
     } catch (error) {
       console.error('Link libraries failed:', error);
       this.showError(progressId, 'Link failed');
+      this.stopTimerForOperation(progressId);
+    }
+  }
+
+  async copyAssets(libraryPath, buildAssetsCommand, libraryName, progressId, operationId = null, isLast = true) {
+    try {
+      // Store operation ID for timer tracking
+      if (operationId && this.timeTracker) {
+        this.operationTimers.set(progressId, operationId);
+      }
+      
+      await window.API.npm_custom_command({
+        path: libraryPath,
+        command: buildAssetsCommand,
+        libraryName: libraryName,
+        progress: progressId,
+        isLast: isLast
+      });
+
+      console.log(`Copy assets process started for ${libraryName}`);
+    } catch (error) {
+      console.error(`Copy assets failed for ${libraryName}:`, error);
+      this.showError(progressId, `Copy assets failed for ${libraryName}`);
+      
+      // Stop timer on error
       this.stopTimerForOperation(progressId);
     }
   }
@@ -704,6 +734,68 @@ export class ProcessManager {
             
             // Clean up operation
             this.unlinkingOperations.delete(progress);
+          }
+        }
+      }
+    }
+  }
+
+  handleCopyAssetsOutput(data, progress, isDone, libraryName) {
+    const element = document.getElementById(progress);
+    if (element) {
+      element.classList.remove('u-hidden');
+      element.innerText += data + '\n';
+      element.scrollTop = element.scrollHeight;
+
+      // Check for successful build patterns
+      if (data.includes('successfully') || data.includes('complete') || 
+          data.includes('✓') || data.includes('Done') ||
+          data.includes('Build finished') || data.includes('assets copied')) {
+        element.className = 'terminal terminal--success';
+      }
+      
+      // Check for errors
+      if (data.includes('ERROR') || data.includes('error') || data.includes('Error') ||
+          data.includes('failed') || data.includes('FAILED') || data.includes('ENOENT') ||
+          data.includes('EACCES') || data.includes('permission denied') ||
+          data.includes('code E') || data.includes('errno -')) {
+        element.className = 'terminal terminal--error';
+      }
+
+      if (isDone) {
+        // Stop timer for this operation
+        this.stopTimerForOperation(progress);
+        
+        // Check if operation was successful
+        const isSuccess = !element.className.includes('terminal--error');
+        
+        // Handle linker rows
+        if (progress.startsWith('linker-progress-')) {
+          const rowId = progress.replace(/^linker-progress-/, '');
+          const linkerRowInstance = this.linkerRows?.get(parseInt(rowId));
+          
+          if (linkerRowInstance) {
+            if (isSuccess) {
+              linkerRowInstance.updateStatus('success', `Copy Assets completed for ${libraryName}`);
+            } else {
+              linkerRowInstance.updateStatus('error', `Copy Assets failed for ${libraryName}`);
+            }
+            
+            // Re-enable the copy assets button
+            const copyAssetsButton = document.getElementById(`copy-assets-button-${rowId}`);
+            if (copyAssetsButton) {
+              copyAssetsButton.classList.remove('btn--disabled');
+            }
+          }
+        }
+        
+        // Handle build rows
+        if (progress.startsWith('build-progress-')) {
+          const rowId = progress.replace(/^build-progress-/, '');
+          const buildRowInstance = this.buildRows?.get(parseInt(rowId));
+          
+          if (buildRowInstance && buildRowInstance.onCopyAssetsComplete) {
+            buildRowInstance.onCopyAssetsComplete(isSuccess);
           }
         }
       }

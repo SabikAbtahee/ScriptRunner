@@ -44,7 +44,6 @@ class ScriptRunnerApp {
 
       this.setupEventListeners();
       this.checkSavedConfig();
-      this.createInitialTerminalRow();
       
       console.log('Script Runner initialized successfully');
     } catch (error) {
@@ -283,14 +282,7 @@ class ScriptRunnerApp {
     }
   }
 
-  async createInitialTerminalRow() {
-    // Create one terminal row by default
-    try {
-      await this.createTerminalRow();
-    } catch (error) {
-      console.error('Failed to create initial terminal row:', error);
-    }
-  }
+
 
   showError(message) {
     // Create a temporary error notification

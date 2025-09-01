@@ -63,7 +63,8 @@
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_BusinessQuestionsUI",
             "libPath": "node_modules/@pmi/business-questions",
             "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Libraries/PMI_Library_BusinessQuestionsUI/dist",
-            "libName":"@pmi/business-questions"
+            "libName":"@pmi/business-questions",
+            "build-assets":"npm run build-assets"
         },
         "PMI_Library_ConstantsUI": {
             "name": "ConstantsUI",
