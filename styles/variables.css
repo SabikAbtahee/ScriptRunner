@@ -60,6 +60,6 @@
   --transition-fast: 0.3s;
   
   /* Layout */
-  --max-terminal-height: 400px;
+  --max-terminal-height: 250px;
   --scrollbar-width: 4px;
 }
