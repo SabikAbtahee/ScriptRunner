@@ -1,5 +1,6 @@
 import { DOMUtils } from './dom-utils.js';
 import { ConfigManager } from './config-manager.js';
+import { FileEditor } from './file-editor.js';
 
 /**
  * Application Row Component
@@ -18,6 +19,9 @@ export class AppRow {
     this.currentOperationStart = null;
     this.currentOperationTime = 0;
     this.timerInterval = null;
+    
+    // File editor instance (created lazily)
+    this.fileEditor = null;
   }
 
   async create() {
@@ -90,7 +94,8 @@ export class AppRow {
         attributes: {
           value: JSON.stringify({
             path: app.path,
-            runCommand: app.runCommand
+            runCommand: app.runCommand,
+            envPath: app.envPath
           })
         }
       });
@@ -133,6 +138,14 @@ export class AppRow {
     });
     DOMUtils.addSafeEventListener(installButton, 'click', () => this.handleInstall());
 
+    // Edit Env button
+    const editEnvButton = DOMUtils.createButton('Edit Env', {
+      id: `edit-env-button-${this.rowId}`,
+      variant: 'btn--info',
+      icon: DOMUtils.getButtonIcon('edit')
+    });
+    DOMUtils.addSafeEventListener(editEnvButton, 'click', () => this.handleEditEnv());
+
     // Close button
     const closeButton = DOMUtils.createElement('button', {
       className: 'btn btn--error btn--icon',
@@ -158,6 +171,7 @@ export class AppRow {
     actions.appendChild(runButton);
     actions.appendChild(restartButton);
     actions.appendChild(installButton);
+    actions.appendChild(editEnvButton);
     
     controls.appendChild(actions);
     controls.appendChild(closeButton);
@@ -266,6 +280,53 @@ export class AppRow {
       `app-progress-${this.rowId}`,
       operationId // Pass operation ID for timer tracking
     );
+  }
+
+  async handleEditEnv() {
+    const appSelect = document.getElementById(`app-select-${this.rowId}`);
+    
+    if (!appSelect.value) {
+      alert('Please select an application');
+      return;
+    }
+
+    try {
+      const appConfig = JSON.parse(appSelect.value);
+      console.log('App config:', appConfig);
+      
+      if (!appConfig.envPath) {
+        alert('No environment file path configured for this application');
+        return;
+      }
+      
+      console.log('Environment path:', appConfig.envPath);
+      console.log('window.API available:', !!window.API);
+      
+      // Wait a bit to ensure API is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Test API availability
+      if (!window.API || !window.API.read_file) {
+        throw new Error('File API is not available. Please try again in a moment.');
+      }
+      
+      // Create FileEditor instance if it doesn't exist
+      if (!this.fileEditor) {
+        console.log('Creating new FileEditor instance');
+        this.fileEditor = new FileEditor();
+      }
+      
+      // Extract filename for display
+      const fileName = appConfig.envPath.split('/').pop() || 'environment.ts';
+      console.log('File name:', fileName);
+      
+      // Open the file in the editor
+      await this.fileEditor.openFile(appConfig.envPath, fileName);
+      
+    } catch (error) {
+      console.error('Failed to open environment file:', error);
+      alert(`Failed to open environment file: ${error.message}`);
+    }
   }
 
   handleClose() {
@@ -473,7 +534,8 @@ export class AppRow {
         attributes: {
           value: JSON.stringify({
             path: app.path,
-            runCommand: app.runCommand
+            runCommand: app.runCommand,
+            envPath: app.envPath
           })
         }
       });

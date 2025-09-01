@@ -42,6 +42,10 @@ const API = {
   // Tools / versions
   get_versions: () => ipcRenderer.invoke('get-versions'),
 
+  // File operations for editor
+  read_file: (filePath) => ipcRenderer.invoke('read-file', filePath),
+  write_file: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
+
   // Output listeners
   build_output: (callback) => {
     const handler = (event, data, progress, isDone) => {

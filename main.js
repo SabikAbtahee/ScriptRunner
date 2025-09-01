@@ -768,6 +768,43 @@ ipcMain.handle('npm_unlink_library', async (event, param) => {
   }
 });
 
+// File operations for editor
+ipcMain.handle('read-file', async (event, filePath) => {
+  try {
+    console.log('Main process: Reading file:', filePath);
+    console.log('Main process: File exists:', fs.existsSync(filePath));
+    
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File does not exist: ${filePath}`);
+    }
+    
+    const content = fs.readFileSync(filePath, 'utf8');
+    console.log('Main process: File read successfully, content length:', content.length);
+    return { success: true, content };
+  } catch (error) {
+    console.error('Main process: Error reading file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('write-file', async (event, filePath, content) => {
+  try {
+    // Create backup before writing
+    if (fs.existsSync(filePath)) {
+      const backupPath = `${filePath}.backup.${Date.now()}`;
+      fs.copyFileSync(filePath, backupPath);
+      console.log(`Created backup: ${backupPath}`);
+    }
+    
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log(`Successfully wrote to: ${filePath}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error writing file:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Restart application
 ipcMain.handle('restart_app', async (event, param) => {
   try {

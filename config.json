@@ -9,26 +9,30 @@
             "name": "Admin",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin",
             "runCommand": "ng serve --port=4201",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin"
+            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_Admin/src/environments/environment.local.ts"
         },
         "pmi_framework_kpidashboard": {
             "name": "KPIDashboard",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard",
             "runCommand": "ng serve --port=4200",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard"
+            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard/src/environments/environment.local.ts"
         },
         "PMI_Framework_AiAssistant": {
             "name": "AiAssistant",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant",
             "runCommand": "ng serve --port=4203",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant"
+            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant/src/environments/environment.local.ts"
 
         },
         "PMI_Framework_WidgetTemplateEditor": {
             "name": "WidgetTemplateEditor",
             "path": "/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor",
             "runCommand": "ng serve --port=4200",
-            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor"
+            "linkPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor/src/environments/environment.local.ts"
 
         }
     },
