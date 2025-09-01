@@ -1,6 +1,7 @@
 import { BuildRow } from './build-row.js';
 import { AppRow } from './app-row.js';
 import { LinkerRow } from './linker-row.js';
+import { TerminalRow } from './terminal-row.js';
 import { ProcessManager } from './process-manager.js';
 import { ConfigManager } from './config-manager.js';
 import { DOMUtils } from './dom-utils.js';
@@ -20,6 +21,7 @@ class ScriptRunnerApp {
     this.buildRows = new Map(); // Track build row instances
     this.appRows = new Map(); // Track app row instances
     this.linkerRows = new Map(); // Track linker row instances
+    this.terminalRows = new Map(); // Track terminal row instances
     
     this.init();
   }
@@ -101,6 +103,14 @@ class ScriptRunnerApp {
       });
     }
 
+    // Add terminal row button
+    const addTerminalRowButton = document.getElementById('addTerminalRowButton');
+    if (addTerminalRowButton) {
+      DOMUtils.addSafeEventListener(addTerminalRowButton, 'click', () => {
+        this.createTerminalRow();
+      });
+    }
+
     // Test file API (temporary for debugging)
     console.log('Testing file API availability:');
     console.log('window.API:', !!window.API);
@@ -135,6 +145,10 @@ class ScriptRunnerApp {
           case 'l':
             e.preventDefault();
             this.createLinkerRow();
+            break;
+          case 't':
+            e.preventDefault();
+            this.createTerminalRow();
             break;
         }
       }
@@ -234,6 +248,29 @@ class ScriptRunnerApp {
     } catch (error) {
       console.error('Failed to create linker row:', error);
       this.showError('Failed to create linker row');
+    }
+  }
+
+  async createTerminalRow() {
+    try {
+      this.rowCounter++;
+      const terminalRow = new TerminalRow(
+        this.container, 
+        this.processManager, 
+        this.timeTracker,
+        this.rowCounter,
+        (rowId, type) => this.handleRowRemoval(rowId, type)
+      );
+      await terminalRow.create();
+      
+      // Store reference to the row instance
+      this.terminalRows.set(this.rowCounter, terminalRow);
+      
+      // Scroll to new row
+      terminalRow.element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+      console.error('Failed to create terminal row:', error);
+      this.showError('Failed to create terminal row');
     }
   }
 
@@ -369,6 +406,8 @@ class ScriptRunnerApp {
       this.appRows.delete(rowId);
     } else if (type === 'linker') {
       this.linkerRows.delete(rowId);
+    } else if (type === 'terminal') {
+      this.terminalRows.delete(rowId);
     }
   }
 }

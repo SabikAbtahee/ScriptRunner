@@ -5,6 +5,7 @@ const kill = require('tree-kill');
 const fs = require('fs');
 const os = require('os');
 const net = require('node:net');
+const pty = require('node-pty');
 
 /**
  * Script Runner 2.0 - Main Process
@@ -15,6 +16,7 @@ const net = require('node:net');
 class AppState {
   constructor() {
     this.runningApps = new Map();
+    this.terminals = new Map(); // Store terminal processes
     this.configPath = path.join(__dirname, 'config.json');
   }
 
@@ -32,6 +34,22 @@ class AppState {
 
   hasRunningApp(directory) {
     return this.runningApps.has(directory);
+  }
+
+  addTerminal(terminalId, ptyProcess) {
+    this.terminals.set(terminalId, ptyProcess);
+  }
+
+  removeTerminal(terminalId) {
+    this.terminals.delete(terminalId);
+  }
+
+  getTerminal(terminalId) {
+    return this.terminals.get(terminalId);
+  }
+
+  hasTerminal(terminalId) {
+    return this.terminals.has(terminalId);
   }
 }
 
@@ -866,6 +884,120 @@ ipcMain.handle('restart_app', async (event, param) => {
   } catch (error) {
     console.error('Restart app error:', error);
     sendOutput(event, 'app_output', `Error: ${error.message}`, param.progress, param.rowCounter, null);
+  }
+});
+
+// Terminal IPC handlers
+ipcMain.handle('create-terminal', async (event, param) => {
+  try {
+    const { terminalId, cols, rows } = param;
+    
+    console.log(`Creating terminal ${terminalId} with size ${cols}x${rows}`);
+
+    // Determine shell based on platform
+    const shell = process.platform === 'win32' ? 'powershell.exe' : process.env.SHELL || '/bin/zsh';
+    
+    // Create PTY process
+    const ptyProcess = pty.spawn(shell, [], {
+      name: 'xterm-color',
+      cols: cols || 80,
+      rows: rows || 24,
+      cwd: process.cwd(),
+      env: { ...process.env, TERM: 'xterm-256color' }
+    });
+
+    // Store the terminal process
+    appState.addTerminal(terminalId, ptyProcess);
+
+    // Handle data from PTY (terminal output)
+    ptyProcess.onData((data) => {
+      try {
+        event.sender.send('terminal-data', {
+          terminalId: terminalId,
+          data: data
+        });
+      } catch (error) {
+        console.error(`Error sending terminal data for ${terminalId}:`, error);
+      }
+    });
+
+    // Handle PTY exit
+    ptyProcess.onExit((exitCode) => {
+      console.log(`Terminal ${terminalId} exited with code: ${exitCode}`);
+      appState.removeTerminal(terminalId);
+      try {
+        event.sender.send('terminal-exit', {
+          terminalId: terminalId,
+          exitCode: exitCode
+        });
+      } catch (error) {
+        console.error(`Error sending terminal exit for ${terminalId}:`, error);
+      }
+    });
+
+    console.log(`Terminal ${terminalId} created successfully with PID: ${ptyProcess.pid}`);
+    return { success: true, pid: ptyProcess.pid };
+
+  } catch (error) {
+    console.error('Failed to create terminal:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('write-to-terminal', async (event, param) => {
+  try {
+    const { terminalId, data } = param;
+    const ptyProcess = appState.getTerminal(terminalId);
+    
+    if (ptyProcess) {
+      ptyProcess.write(data);
+      return { success: true };
+    } else {
+      console.error(`Terminal ${terminalId} not found`);
+      return { success: false, error: 'Terminal not found' };
+    }
+  } catch (error) {
+    console.error('Failed to write to terminal:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('resize-terminal', async (event, param) => {
+  try {
+    const { terminalId, cols, rows } = param;
+    const ptyProcess = appState.getTerminal(terminalId);
+    
+    if (ptyProcess) {
+      ptyProcess.resize(cols, rows);
+      console.log(`Terminal ${terminalId} resized to ${cols}x${rows}`);
+      return { success: true };
+    } else {
+      console.error(`Terminal ${terminalId} not found for resize`);
+      return { success: false, error: 'Terminal not found' };
+    }
+  } catch (error) {
+    console.error('Failed to resize terminal:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('kill-terminal', async (event, param) => {
+  try {
+    const { terminalId } = param;
+    const ptyProcess = appState.getTerminal(terminalId);
+    
+    if (ptyProcess) {
+      ptyProcess.kill();
+      appState.removeTerminal(terminalId);
+      console.log(`Terminal ${terminalId} killed successfully`);
+      return { success: true };
+    } else {
+      console.error(`Terminal ${terminalId} not found for kill`);
+      return { success: false, error: 'Terminal not found' };
+    }
+  } catch (error) {
+    console.error('Failed to kill terminal:', error);
+    return { success: false, error: error.message };
   }
 });
 

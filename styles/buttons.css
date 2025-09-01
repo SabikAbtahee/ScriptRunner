@@ -111,6 +111,12 @@
   color: white;
 }
 
+/* Terminal button variant - dark gray color */
+.btn--terminal {
+  background-color: #374151;
+  color: white;
+}
+
 /* Button variant hover states */
 .btn--success:hover:not(.btn--disabled) {
   background-color: var(--success-light);
@@ -163,6 +169,10 @@
 
 .btn--install:hover:not(.btn--disabled) {
   background-color: #292929;
+}
+
+.btn--terminal:hover:not(.btn--disabled) {
+  background-color: #4b5563;
 }
 
 .btn--disabled {
