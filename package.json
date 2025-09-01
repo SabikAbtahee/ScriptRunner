@@ -1,6 +1,6 @@
 {
   "name": "scriptrunner_2.0",
-  "productName": "Script Runner 3.0",
+  "productName": "Script Runner",
   "description": "My Electron application description",
   "keywords": [],
   "main": "./main.js",
