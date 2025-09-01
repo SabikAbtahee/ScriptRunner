@@ -44,7 +44,7 @@ class ScriptRunnerApp {
 
       this.setupEventListeners();
       this.checkSavedConfig();
-      this.createInitialBuildRow();
+      this.createInitialTerminalRow();
       
       console.log('Script Runner initialized successfully');
     } catch (error) {
@@ -280,6 +280,15 @@ class ScriptRunnerApp {
       await this.createBuildRow();
     } catch (error) {
       console.error('Failed to create initial build row:', error);
+    }
+  }
+
+  async createInitialTerminalRow() {
+    // Create one terminal row by default
+    try {
+      await this.createTerminalRow();
+    } catch (error) {
+      console.error('Failed to create initial terminal row:', error);
     }
   }
 

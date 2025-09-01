@@ -902,7 +902,7 @@ ipcMain.handle('create-terminal', async (event, param) => {
       name: 'xterm-color',
       cols: cols || 80,
       rows: rows || 24,
-      cwd: process.cwd(),
+      cwd: os.homedir(),
       env: { ...process.env, TERM: 'xterm-256color' }
     });
 
