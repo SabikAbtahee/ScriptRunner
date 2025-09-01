@@ -807,13 +807,6 @@ ipcMain.handle('read-file', async (event, filePath) => {
 
 ipcMain.handle('write-file', async (event, filePath, content) => {
   try {
-    // Create backup before writing
-    if (fs.existsSync(filePath)) {
-      const backupPath = `${filePath}.backup.${Date.now()}`;
-      fs.copyFileSync(filePath, backupPath);
-      console.log(`Created backup: ${backupPath}`);
-    }
-    
     fs.writeFileSync(filePath, content, 'utf8');
     console.log(`Successfully wrote to: ${filePath}`);
     return { success: true };
@@ -894,16 +887,39 @@ ipcMain.handle('create-terminal', async (event, param) => {
     
     console.log(`Creating terminal ${terminalId} with size ${cols}x${rows}`);
 
-    // Determine shell based on platform
-    const shell = process.platform === 'win32' ? 'powershell.exe' : process.env.SHELL || '/bin/zsh';
+    // Determine shell based on platform with robust fallbacks (absolute paths only)
+    let shell;
+    let shellArgs = [];
+    if (process.platform === 'win32') {
+      shell = 'powershell.exe';
+    } else {
+      const candidates = [];
+      try {
+        if (process.env.SHELL && path.isAbsolute(process.env.SHELL) && fs.existsSync(process.env.SHELL)) {
+          candidates.push(process.env.SHELL);
+        }
+      } catch (_) {}
+      ['/bin/zsh', '/bin/bash', '/bin/sh'].forEach((p) => {
+        try { if (fs.existsSync(p)) candidates.push(p); } catch (_) {}
+      });
+      shell = candidates[0] || '/bin/sh';
+      // Use login shell to ensure expected env/profile in packaged app
+      shellArgs = ['-l'];
+    }
     
     // Create PTY process
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn('/bin/zsh', ['-l'], {
       name: 'xterm-color',
       cols: cols || 80,
       rows: rows || 24,
       cwd: os.homedir(),
-      env: { ...process.env, TERM: 'xterm-256color' }
+      env: {
+        ...process.env,
+        TERM: 'xterm-256color',
+        LANG: process.env.LANG || 'en_US.UTF-8',
+        LC_ALL: process.env.LC_ALL || 'en_US.UTF-8',
+        PATH: getExtendedPath()
+      }
     });
 
     // Store the terminal process
