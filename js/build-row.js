@@ -118,6 +118,9 @@ export class BuildRow {
       select.appendChild(option);
     });
 
+    // Add event listener to show/hide Copy Assets button based on selection
+    DOMUtils.addSafeEventListener(select, 'change', () => this.handleLibrarySelectionChange(config));
+
     return select;
   }
 
@@ -200,6 +203,15 @@ export class BuildRow {
     });
     DOMUtils.addSafeEventListener(installButton, 'click', () => this.handleInstall());
 
+    // Copy Assets button
+    const copyAssetsButton = DOMUtils.createButton('Copy Assets', {
+      id: `copy-assets-button-${this.rowId}`,
+      variant: 'btn--secondary',
+      icon: DOMUtils.getButtonIcon('copy'),
+      className: 'u-hidden' // Initially hidden
+    });
+    DOMUtils.addSafeEventListener(copyAssetsButton, 'click', () => this.handleCopyAssets());
+
     // Close button
     const closeButton = DOMUtils.createElement('button', {
       className: 'btn btn--error btn--icon',
@@ -232,6 +244,7 @@ export class BuildRow {
     actions.appendChild(copyButton);
     actions.appendChild(watchButton);
     actions.appendChild(installButton);
+    actions.appendChild(copyAssetsButton);
     
     controls.appendChild(actions);
     controls.appendChild(closeButton);
@@ -361,6 +374,94 @@ export class BuildRow {
     );
   }
 
+  async handleCopyAssets() {
+    const sourceSelect = document.getElementById(`source-select-${this.rowId}`);
+    
+    if (!sourceSelect.value) {
+      alert('Please select a source library');
+      return;
+    }
+
+    try {
+      const sourceData = JSON.parse(sourceSelect.value);
+      const config = await ConfigManager.getConfig();
+      
+      // Find the library in config to get build-assets command
+      let buildAssetsCommand = null;
+      let libraryName = null;
+      
+      Object.values(config.Library || {}).forEach(library => {
+        if (library.path === sourceData.path) {
+          buildAssetsCommand = library['build-assets'];
+          libraryName = library.name;
+        }
+      });
+
+      if (!buildAssetsCommand) {
+        alert('This library does not have a build-assets command configured');
+        return;
+      }
+
+      const copyAssetsButton = document.getElementById(`copy-assets-button-${this.rowId}`);
+      copyAssetsButton.classList.add('btn--disabled');
+      copyAssetsButton.blur(); // Remove focus from the button
+
+      // Update status to copying assets
+      this.updateStatus('building', 'Copying Assets');
+
+      // Start individual timer for this operation
+      this.startIndividualTimer();
+
+      // Start timing for this operation
+      const operationId = `copy-assets-${this.rowId}`;
+      this.timeTracker.startTimer(operationId, 'copy-assets');
+
+      this.processManager.copyAssets(
+        sourceData.path,
+        buildAssetsCommand,
+        libraryName,
+        `build-progress-${this.rowId}`,
+        operationId
+      );
+    } catch (error) {
+      console.error('Failed to handle copy assets:', error);
+      alert('Failed to copy assets. Check console for details.');
+    }
+  }
+
+  handleLibrarySelectionChange(config) {
+    const sourceSelect = document.getElementById(`source-select-${this.rowId}`);
+    const copyAssetsButton = document.getElementById(`copy-assets-button-${this.rowId}`);
+    
+    if (!sourceSelect.value || !copyAssetsButton) {
+      return;
+    }
+
+    try {
+      const sourceData = JSON.parse(sourceSelect.value);
+      
+      // Find the library in config to check if it has build-assets command
+      let hasBuildAssets = false;
+      
+      Object.values(config.Library || {}).forEach(library => {
+        if (library.path === sourceData.path && library['build-assets']) {
+          hasBuildAssets = true;
+        }
+      });
+
+      // Show or hide the Copy Assets button
+      if (hasBuildAssets) {
+        copyAssetsButton.classList.remove('u-hidden');
+      } else {
+        copyAssetsButton.classList.add('u-hidden');
+      }
+    } catch (error) {
+      console.error('Error handling library selection change:', error);
+      // Hide button on error
+      copyAssetsButton.classList.add('u-hidden');
+    }
+  }
+
   handleClose() {
     this.remove();
   }
@@ -430,6 +531,15 @@ export class BuildRow {
       });
       select.appendChild(option);
     });
+
+    // Re-add event listener for Copy Assets button visibility
+    DOMUtils.addSafeEventListener(select, 'change', () => this.handleLibrarySelectionChange(config));
+    
+    // Hide Copy Assets button initially since no library is selected
+    const copyAssetsButton = document.getElementById(`copy-assets-button-${this.rowId}`);
+    if (copyAssetsButton) {
+      copyAssetsButton.classList.add('u-hidden');
+    }
   }
 
   populateApplicationSelect(select, config) {
@@ -527,6 +637,30 @@ export class BuildRow {
       this.updateStatus('installed', `Install Done - ${currentDate}`);
     } else {
       this.updateStatus('error', `Install Failed - ${currentDate}`);
+    }
+    
+    // Stop individual timer
+    this.stopIndividualTimer();
+  }
+
+  /**
+   * Handle copy assets completion
+   */
+  onCopyAssetsComplete(isSuccess) {
+    // Re-enable copy assets button
+    const copyAssetsButton = document.getElementById(`copy-assets-button-${this.rowId}`);
+    if (copyAssetsButton) {
+      copyAssetsButton.classList.remove('btn--disabled');
+    }
+
+    // Update status to completed with date
+    const currentDate = new Date().toLocaleString();
+    
+    // Check if copy assets was successful
+    if (isSuccess) {
+      this.updateStatus('compiled', `Copy Assets Done - ${currentDate}`);
+    } else {
+      this.updateStatus('error', `Copy Assets Failed - ${currentDate}`);
     }
     
     // Stop individual timer

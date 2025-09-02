@@ -44,7 +44,6 @@ class ScriptRunnerApp {
 
       this.setupEventListeners();
       this.checkSavedConfig();
-      this.createInitialBuildRow();
       
       console.log('Script Runner initialized successfully');
     } catch (error) {
@@ -255,6 +254,8 @@ class ScriptRunnerApp {
       console.error('Failed to create initial build row:', error);
     }
   }
+
+
 
   showError(message) {
     // Create a temporary error notification

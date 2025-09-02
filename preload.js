@@ -23,6 +23,7 @@ const API = {
   copy: (param) => ipcRenderer.invoke('copy', param),
   watch: (param) => ipcRenderer.invoke('watch', param),
   npm_install: (param) => ipcRenderer.invoke('npm_install', param),
+  npm_custom_command: (param) => ipcRenderer.invoke('npm_custom_command', param),
 
   // Application operations
   run_app: (param) => ipcRenderer.invoke('run_app', param),
@@ -71,6 +72,16 @@ const API = {
     
     // Return cleanup function
     return () => ipcRenderer.removeListener('copy_output', handler);
+  },
+
+  copy_assets_output: (callback) => {
+    const handler = (event, data, progress, isDone, libraryName) => {
+      callback(data, progress, isDone, libraryName);
+    };
+    ipcRenderer.on('copy_assets_output', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('copy_assets_output', handler);
   },
 
   watch_output: (callback) => {

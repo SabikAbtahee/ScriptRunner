@@ -163,7 +163,7 @@
   background-color: #1a1a1a;
   border-radius: var(--border-radius);
   overflow: hidden;
-  height: 400px;
+  height: var(--max-terminal-height);
   position: relative;
   width: 100%;
   display: flex;

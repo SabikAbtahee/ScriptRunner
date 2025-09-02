@@ -603,6 +603,50 @@ ipcMain.handle('npm_install', async (event, param) => {
   }
 });
 
+// Run custom npm command (for build-assets)
+ipcMain.handle('npm_custom_command', async (event, param) => {
+  try {
+    const directory = param.path;
+    const customCommand = param.command;
+    const libraryName = param.libraryName || 'library';
+
+    console.log(`Starting custom command in: ${directory}`);
+    console.log(`Command: ${customCommand}`);
+
+    // Parse the command and arguments
+    const { baseCommand, args } = parseCommand(customCommand);
+
+    const command = spawn(baseCommand, args, {
+      cwd: directory,
+      shell: true,
+      env: { ...process.env, PATH: getExtendedPath() }
+    });
+    sendOutput(event, 'copy_assets_output', `$ ${customCommand}`, param.progress, false, param.libraryName);
+
+    command.stdout.on('data', (data) => {
+      sendOutput(event, 'copy_assets_output', data.toString(), param.progress, false, param.libraryName);
+    });
+
+    command.stderr.on('data', (data) => {
+      sendOutput(event, 'copy_assets_output', data.toString(), param.progress, false, param.libraryName);
+    });
+
+    command.on('close', (code) => {
+      console.log(`Custom command process exited with code: ${code}`);
+      sendOutput(event, 'copy_assets_output', `${libraryName} build-assets completed with exit code: ${code}`, param.progress, true, param.libraryName);
+    });
+
+    command.on('error', (error) => {
+      console.error('Custom command process error:', error);
+      sendOutput(event, 'copy_assets_output', `Error: ${error.message}`, param.progress, true, param.libraryName);
+    });
+
+  } catch (error) {
+    console.error('Failed to start custom command:', error);
+    sendOutput(event, 'copy_assets_output', `Failed to start custom command: ${error.message}`, param.progress, true, param.libraryName);
+  }
+});
+
 // Kill process
 ipcMain.handle('kill', async (event, param) => {
   const pid = param.command;
@@ -875,13 +919,6 @@ ipcMain.handle('read-file', async (event, filePath) => {
 
 ipcMain.handle('write-file', async (event, filePath, content) => {
   try {
-    // Create backup before writing
-    if (fs.existsSync(filePath)) {
-      const backupPath = `${filePath}.backup.${Date.now()}`;
-      fs.copyFileSync(filePath, backupPath);
-      console.log(`Created backup: ${backupPath}`);
-    }
-    
     fs.writeFileSync(filePath, content, 'utf8');
     console.log(`Successfully wrote to: ${filePath}`);
     return { success: true };
@@ -968,16 +1005,39 @@ ipcMain.handle('create-terminal', async (event, param) => {
     
     console.log(`Creating terminal ${terminalId} with size ${cols}x${rows}`);
 
-    // Determine shell based on platform
-    const shell = process.platform === 'win32' ? 'powershell.exe' : process.env.SHELL || '/bin/zsh';
+    // Determine shell based on platform with robust fallbacks (absolute paths only)
+    let shell;
+    let shellArgs = [];
+    if (process.platform === 'win32') {
+      shell = 'powershell.exe';
+    } else {
+      const candidates = [];
+      try {
+        if (process.env.SHELL && path.isAbsolute(process.env.SHELL) && fs.existsSync(process.env.SHELL)) {
+          candidates.push(process.env.SHELL);
+        }
+      } catch (_) {}
+      ['/bin/zsh', '/bin/bash', '/bin/sh'].forEach((p) => {
+        try { if (fs.existsSync(p)) candidates.push(p); } catch (_) {}
+      });
+      shell = candidates[0] || '/bin/sh';
+      // Use login shell to ensure expected env/profile in packaged app
+      shellArgs = ['-l'];
+    }
     
     // Create PTY process
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn('/bin/zsh', ['-l'], {
       name: 'xterm-color',
       cols: cols || 80,
       rows: rows || 24,
-      cwd: process.cwd(),
-      env: { ...process.env, TERM: 'xterm-256color' }
+      cwd: os.homedir(),
+      env: {
+        ...process.env,
+        TERM: 'xterm-256color',
+        LANG: process.env.LANG || 'en_US.UTF-8',
+        LC_ALL: process.env.LC_ALL || 'en_US.UTF-8',
+        PATH: getExtendedPath()
+      }
     });
 
     // Store the terminal process

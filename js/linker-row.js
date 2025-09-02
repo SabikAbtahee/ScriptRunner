@@ -106,6 +106,7 @@ export class LinkerRow {
 
     Object.keys(config.Library || {}).forEach(key => {
       const library = config.Library[key];
+      
       const value = JSON.stringify({
         path: library.path,
         node_path: library.libPath,
@@ -120,6 +121,8 @@ export class LinkerRow {
         libName: library.libName
       });
     });
+
+
 
     return multiselect;
   }
@@ -188,6 +191,8 @@ export class LinkerRow {
       icon: DOMUtils.getButtonIcon('unlink')
     });
     DOMUtils.addSafeEventListener(unlinkButton, 'click', () => this.handleUnlink());
+
+
 
     // Close button
     const closeButton = DOMUtils.createElement('button', {
@@ -328,6 +333,10 @@ export class LinkerRow {
   handleClose() {
     this.remove();
   }
+
+
+
+
 
   validateSelections(sourceMultiselect, destSelect) {
     const selectedLibraries = sourceMultiselect.getSelectedValues();

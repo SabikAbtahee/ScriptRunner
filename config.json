@@ -9,26 +9,33 @@
             "name": "Admin",
             "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_Admin",
             "runCommand": "ng serve --port=4201",
-            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_Admin"
+            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_Admin",
+            "envPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_Admin/src/environments/environment.local.ts"
         },
         "pmi_framework_kpidashboard": {
             "name": "KPIDashboard",
             "path": "C:/Users/u1180569/Projects/KPI/pmi_framework_kpidashboard",
             "runCommand": "ng serve --port=4200",
-            "linkPath":"C:/Users/u1180569/Projects/KPI/pmi_framework_kpidashboard"
+            "linkPath":"C:/Users/u1180569/Projects/KPI/pmi_framework_kpidashboard",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/pmi_framework_kpidashboard/src/environments/environment.local.ts"
+
         },
         "PMI_Framework_AiAssistant": {
             "name": "AiAssistant",
             "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_AiAssistant",
             "runCommand": "ng serve --port=4203",
-            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_AiAssistant"
+            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_AiAssistant",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_AiAssistant/src/environments/environment.local.ts"
+
 
         },
         "PMI_Framework_WidgetTemplateEditor": {
             "name": "WidgetTemplateEditor",
             "path": "C:/Users/u1180569/Projects/KPI/PMI_Framework_WidgetTemplateEditor",
             "runCommand": "ng serve --port=4200",
-            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_WidgetTemplateEditor"
+            "linkPath":"C:/Users/u1180569/Projects/KPI/PMI_Framework_WidgetTemplateEditor",
+            "envPath":"/Users/sabik.abtahee@iqvia.com/Projects/KPI_Applications/PMI_Framework_WidgetTemplateEditor/src/environments/environment.local.ts"
+
 
         }
     },
