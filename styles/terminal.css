@@ -116,3 +116,123 @@
   border-radius: 50%;
   background-color: currentColor;
 }
+
+/* Terminal Row Styles */
+.terminal-row {
+  background-color: #1a1a1a;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.terminal-header {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.terminal-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #dc2626;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  opacity: 0.7;
+}
+
+.terminal-close-btn:hover {
+  background-color: #b91c1c;
+  opacity: 1;
+}
+
+.terminal-close-btn svg {
+  fill: white;
+}
+
+.terminal-container {
+  padding: 0;
+  background-color: #1a1a1a;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  height: 400px;
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Xterm.js terminal styling */
+.terminal-container .xterm {
+  /* padding: 40px var(--spacing-md) var(--spacing-md) var(--spacing-md); */
+  margin: 0px;
+  background-color: transparent !important;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+
+.terminal-container .xterm-viewport {
+  background-color: transparent !important;
+  overflow: hidden !important;
+}
+
+.terminal-container .xterm-screen {
+  background-color: transparent !important;
+}
+
+/* Hide terminal scrollbars */
+.terminal-container .xterm .xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-container .xterm-viewport {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Terminal cursor styling */
+.terminal-container .xterm .xterm-cursor-layer .xterm-cursor {
+  background-color: #ffffff !important;
+}
+
+/* Terminal selection styling */
+.terminal-container .xterm .xterm-selection div {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Terminal loading state */
+.terminal-container.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-family: var(--font-family-mono);
+}
+
+.terminal-container.loading::before {
+  content: "Initializing terminal...";
+}
+
+/* Terminal error state */
+.terminal-container.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--error-color);
+  font-family: var(--font-family-mono);
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.terminal-container.error::before {
+  content: "Failed to initialize terminal";
+}

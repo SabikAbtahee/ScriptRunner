@@ -46,6 +46,12 @@ const API = {
   read_file: (filePath) => ipcRenderer.invoke('read-file', filePath),
   write_file: (filePath, content) => ipcRenderer.invoke('write-file', filePath, content),
 
+  // Terminal operations
+  create_terminal: (param) => ipcRenderer.invoke('create-terminal', param),
+  write_to_terminal: (param) => ipcRenderer.invoke('write-to-terminal', param),
+  resize_terminal: (param) => ipcRenderer.invoke('resize-terminal', param),
+  kill_terminal: (param) => ipcRenderer.invoke('kill-terminal', param),
+
   // Output listeners
   build_output: (callback) => {
     const handler = (event, data, progress, isDone) => {
@@ -115,6 +121,27 @@ const API = {
     
     // Return cleanup function
     return () => ipcRenderer.removeListener('unlink_output', handler);
+  },
+
+  // Terminal event listeners
+  on_terminal_data: (callback) => {
+    const handler = (event, data) => {
+      callback(data);
+    };
+    ipcRenderer.on('terminal-data', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('terminal-data', handler);
+  },
+
+  on_terminal_exit: (callback) => {
+    const handler = (event, data) => {
+      callback(data);
+    };
+    ipcRenderer.on('terminal-exit', handler);
+    
+    // Return cleanup function
+    return () => ipcRenderer.removeListener('terminal-exit', handler);
   }
 };
 
